@@ -24,3 +24,6 @@ if __name__ == "__main__":
     
     # Test Case 2: Deep metal/water/earth expected (should lean towards introversion/sensing/thinking)
     run_test(2, 1988, 12, 10, 8, 20, "Seoul", "ISTJ")
+    
+    # Test Case 3: User's reported case 1999-05-10 19:32 (Saju elements calculation verify)
+    run_test(3, 1999, 5, 10, 19, 32, "Seoul", None)

@@ -1,0 +1,1688 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>사주 & MBTI 가설 매핑 분석기</title>
+    <!-- Google Fonts Outfit & Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: rgba(22, 28, 45, 0.7);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --primary: #a855f7;
+            --primary-glow: rgba(168, 85, 247, 0.4);
+            --secondary: #3b82f6;
+            --accent: #f43f5e;
+            
+            /* Elements colors */
+            --color-wood: #10b981;
+            --color-fire: #ef4444;
+            --color-earth: #f59e0b;
+            --color-metal: #cbd5e1;
+            --color-water: #3b82f6;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(168, 85, 247, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(59, 82, 246, 0.15) 0%, transparent 40%);
+        }
+
+        header {
+            width: 100%;
+            max-width: 1200px;
+            padding: 2.5rem 1.5rem 1.5rem;
+            text-align: center;
+        }
+
+        h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.05em;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 1rem;
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        main {
+            width: 100%;
+            max-width: 1200px;
+            padding: 0 1.5rem 4rem;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+
+        @media (min-width: 900px) {
+            main:not(.results-active) {
+                grid-template-columns: 380px 1fr;
+            }
+            main.results-active {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Glassmorphism Card Style */
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .input-section h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .input-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        input, select {
+            width: 100%;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 0.8rem 1rem;
+            color: var(--text-main);
+            font-family: inherit;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 10px var(--primary-glow);
+        }
+
+        button {
+            width: 100%;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 1rem;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 1rem;
+            box-shadow: 0 4px 15px rgba(168, 85, 247, 0.3);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(168, 85, 247, 0.5);
+        }
+
+        /* Secondary Button Style */
+        .btn-secondary {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-main);
+            box-shadow: none;
+            margin-top: 1.5rem;
+            padding: 1rem;
+            border-radius: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.2s, border-color 0.2s;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--primary);
+            box-shadow: 0 4px 15px rgba(168, 85, 247, 0.2);
+        }
+
+        /* Results Area styles */
+        .results-section {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .placeholder-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            min-height: 400px;
+            text-align: center;
+            color: var(--text-muted);
+            border: 2px dashed rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 2rem;
+        }
+
+        .placeholder-box svg {
+            width: 64px;
+            height: 64px;
+            stroke: rgba(168, 85, 247, 0.4);
+            margin-bottom: 1.5rem;
+            animation: pulse 3s infinite ease-in-out;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.6; }
+            50% { transform: scale(1.05); opacity: 1; }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Loader */
+        .loader-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 400px;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(168, 85, 247, 0.1);
+            border-left-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Grid elements for result display */
+        .results-grid-top {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+
+        @media (min-width: 768px) {
+            .results-grid-top {
+                grid-template-columns: 1.2fr 1fr;
+            }
+        }
+
+        /* MBTI Rank Cards */
+        .rank-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .rank-card {
+            background: rgba(15, 23, 42, 0.4);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 1.25rem 0.75rem;
+            text-align: center;
+            transition: transform 0.3s, border-color 0.3s;
+        }
+
+        .rank-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+        }
+
+        .rank-card.rank-1 {
+            background: linear-gradient(180deg, rgba(168, 85, 247, 0.15) 0%, rgba(15, 23, 42, 0.4) 100%);
+            border-color: rgba(168, 85, 247, 0.3);
+        }
+
+        .rank-card.rank-1 .mbti-type {
+            font-size: 2.75rem;
+            font-weight: 800;
+            color: #f3e8ff;
+            text-shadow: 0 0 15px rgba(168, 85, 247, 0.5);
+        }
+
+        .rank-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+
+        .mbti-type {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.85rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 0.25rem;
+        }
+
+        /* Elements bars */
+        .elem-bar-group {
+            margin-bottom: 1rem;
+        }
+
+        .elem-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 1.05rem;
+            font-weight: 600;
+            margin-bottom: 0.4rem;
+        }
+
+        .elem-name {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .elem-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .elem-bar-bg {
+            width: 100%;
+            height: 8px;
+            background: rgba(15, 23, 42, 0.8);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .elem-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            width: 0%;
+            transition: width 1s cubic-bezier(0.1, 0.8, 0.2, 1);
+        }
+
+        /* VS Progress Bars for MBTI 4 axes */
+        .axis-row {
+            margin-bottom: 1.5rem;
+        }
+
+        .axis-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            margin-bottom: 0.6rem;
+        }
+
+        .axis-bar-container {
+            display: flex;
+            align-items: center;
+            height: 14px;
+            background: rgba(15, 23, 42, 0.8);
+            border-radius: 7px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .axis-left-fill {
+            height: 100%;
+            background: var(--primary);
+            transition: width 1s ease-out;
+        }
+
+        .axis-right-fill {
+            height: 100%;
+            background: var(--secondary);
+            transition: width 1s ease-out;
+        }
+
+        .axis-center-line {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            width: 2px;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .axis-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 0.45rem;
+            font-size: 1.15rem;
+            font-weight: 700;
+        }
+
+        .axis-val {
+            font-size: 0.9rem;
+            font-weight: 400;
+            color: var(--text-muted);
+        }
+
+        /* Pillars display style */
+        .pillar-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .pillar-box {
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 0.75rem 0.5rem;
+            text-align: center;
+        }
+
+        .pillar-name {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            margin-bottom: 0.4rem;
+        }
+
+        .pillar-chars {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.75rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #e9d5ff, #bfdbfe);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Details text style */
+        .detail-card h3 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.5rem;
+            margin-bottom: 1.25rem;
+            border-bottom: 1px solid var(--card-border);
+            padding-bottom: 0.5rem;
+            color: var(--text-main);
+        }
+
+        .detail-card p {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            color: #cbd5e1;
+            margin-bottom: 1.2rem;
+        }
+
+        .detail-card p strong {
+            color: var(--text-main);
+        }
+
+        /* Badge/Chips */
+        .badge {
+            background: rgba(168, 85, 247, 0.15);
+            color: #d8b4fe;
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            border-radius: 20px;
+            padding: 0.35rem 0.95rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .comp-box {
+            background: rgba(15, 23, 42, 0.4);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .comp-val {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--text-main);
+            margin-top: 0.25rem;
+        }
+
+        .comp-val.match {
+            color: #10b981;
+            text-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+        }
+
+        /* Life Scenarios Comparison Grid & Layout */
+        .scenarios-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .scenario-item {
+            background: rgba(15, 23, 42, 0.4);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 1.5rem;
+        }
+
+        .scenario-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            border-left: 3px solid var(--primary);
+            padding-left: 0.75rem;
+        }
+
+        .scenario-split-box {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+
+        @media (min-width: 768px) {
+            .scenario-split-box {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .scenario-subcard {
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            padding: 1.25rem;
+        }
+
+        .subcard-header {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .subcard-header.real {
+            color: var(--secondary);
+        }
+
+        .subcard-header.est {
+            color: var(--primary);
+        }
+
+        .scenario-text {
+            font-size: 1.05rem;
+            line-height: 1.7;
+            color: #cbd5e1;
+        }
+
+        /* Modal backdrop and content */
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(11, 15, 25, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-backdrop.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 24px;
+            width: 90%;
+            max-width: 750px;
+            max-height: 85vh;
+            overflow-y: auto;
+            padding: 2.5rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+            transform: scale(0.95);
+            transition: transform 0.3s ease;
+        }
+
+        .modal-backdrop.active .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--card-border);
+            padding-bottom: 0.75rem;
+        }
+
+        .modal-header h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.25rem;
+            margin: 0;
+            width: auto;
+            box-shadow: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.2s;
+        }
+
+        .close-btn:hover {
+            color: var(--accent);
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Styles for breakdown details inside modal */
+        .step-section {
+            margin-bottom: 2rem;
+        }
+
+        .step-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.1rem;
+            color: var(--primary);
+            font-weight: 700;
+            margin-bottom: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .step-body {
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 1.25rem;
+        }
+
+        .calc-list {
+            list-style: none;
+            font-size: 0.9rem;
+            color: #cbd5e1;
+            line-height: 1.7;
+        }
+
+        .calc-list li {
+            padding: 0.4rem 0;
+            border-bottom: 1px dashed rgba(255, 255, 255, 0.05);
+        }
+
+        .calc-list li:last-child {
+            border-bottom: none;
+        }
+
+        /* Formulas Code block */
+        .formula-box {
+            font-family: 'Fira Code', 'Courier New', Courier, monospace;
+            font-size: 0.85rem;
+            background: #0f172a;
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.8rem;
+            border-left: 3px solid var(--secondary);
+            color: #38bdf8;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+
+        footer {
+            margin-top: auto;
+            width: 100%;
+            max-width: 800px;
+            padding: 2rem 1.5rem;
+            text-align: center;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+
+        footer hr {
+            border: none;
+            border-top: 1px solid var(--card-border);
+            margin-bottom: 1.5rem;
+        }
+
+        /* Detail card subtitle scaling */
+        .detail-card .subtitle {
+            font-size: 1.1rem;
+            max-width: 100%;
+        }
+
+        /* Back Button Style */
+        .btn-back {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-main);
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: none;
+        }
+
+        .btn-back:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--primary);
+            box-shadow: 0 4px 15px rgba(168, 85, 247, 0.25);
+            transform: translateX(-3px);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>사주 & MBTI 가설 매핑 분석</h1>
+        <p class="subtitle">동양의 전통적인 음양오행 상징 체계와 서양의 MBTI 자기인식 모델을 결합한 가설적 매핑 시스템을 통해 개인의 잠재적 기질 성향을 추정합니다.</p>
+    </header>
+
+    <main>
+        <!-- Left: Input parameters Form -->
+        <section class="card input-section">
+            <h2>
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                태어난 시간 입력
+            </h2>
+            
+            <form id="analyze-form">
+                <div class="form-group">
+                    <label for="calendar_type">달력 구분 (음양력)</label>
+                    <select id="calendar_type" name="calendar_type" required>
+                        <option value="solar" selected>양력 (Solar)</option>
+                        <option value="lunar_solar">음력 평달 (Lunar Regular)</option>
+                        <option value="lunar_leap">음력 윤달 (Lunar Leap)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="gender">성별 (대운 산출용)</label>
+                    <select id="gender" name="gender" required>
+                        <option value="male" selected>남성</option>
+                        <option value="female">여성</option>
+                    </select>
+                </div>
+
+
+                <div class="form-group">
+                    <label for="year">출생 연도</label>
+                    <input type="number" id="year" name="year" min="1900" max="2100" placeholder="예: 1995" required>
+                </div>
+                
+                <div class="form-group">
+                    <div class="input-row">
+                        <div>
+                            <label for="month">출생 월</label>
+                            <select id="month" name="month" required>
+                                <option value="">선택</option>
+                                <script>
+                                    for(let i=1; i<=12; i++) document.write(`<option value="${i}">${i}월</option>`);
+                                </script>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="day">출생 일</label>
+                            <select id="day" name="day" required>
+                                <option value="">선택</option>
+                                <script>
+                                    for(let i=1; i<=31; i++) document.write(`<option value="${i}">${i}일</option>`);
+                                </script>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="input-row">
+                        <div>
+                            <label for="hour">출생 시</label>
+                            <select id="hour" name="hour" required>
+                                <option value="">선택</option>
+                                <script>
+                                    for(let i=0; i<=23; i++) document.write(`<option value="${i}">${i}시</option>`);
+                                </script>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="minute">출생 분</label>
+                            <select id="minute" name="minute" required>
+                                <script>
+                                    for(let i=0; i<60; i+=10) document.write(`<option value="${i}">${i}분</option>`);
+                                </script>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="city_select">출생 도시</label>
+                    <select id="city_select" name="city_select" required>
+                        <optgroup label="대한민국 주요 도시">
+                            <option value="Seoul|126.9780|9" selected>서울 (Standard UTC+9)</option>
+                            <option value="Busan|129.0756|9">부산 (Standard UTC+9)</option>
+                            <option value="Incheon|126.7052|9">인천 (Standard UTC+9)</option>
+                            <option value="Daegu|128.6014|9">대구 (Standard UTC+9)</option>
+                            <option value="Daejeon|127.3845|9">대전 (Standard UTC+9)</option>
+                            <option value="Gwangju|126.8526|9">광주 (Standard UTC+9)</option>
+                            <option value="Ulsan|129.3114|9">울산 (Standard UTC+9)</option>
+                            <option value="Sejong|127.2890|9">세종 (Standard UTC+9)</option>
+                            <option value="Suwon|127.0097|9">경기/수원 (Standard UTC+9)</option>
+                            <option value="Chuncheon|127.7298|9">강원/춘천 (Standard UTC+9)</option>
+                            <option value="Cheongju|127.4890|9">충북/청주 (Standard UTC+9)</option>
+                            <option value="Cheonan|127.1470|9">충남/천안 (Standard UTC+9)</option>
+                            <option value="Jeonju|127.1480|9">전북/전주 (Standard UTC+9)</option>
+                            <option value="Mokpo|126.3897|9">전남/목포 (Standard UTC+9)</option>
+                            <option value="Pohang|129.3650|9">경북/포항 (Standard UTC+9)</option>
+                            <option value="Changwon|128.6811|9">경남/창원 (Standard UTC+9)</option>
+                            <option value="Jeju|126.5312|9">제주 (Standard UTC+9)</option>
+                        </optgroup>
+                        <optgroup label="해외 주요 도시">
+                            <option value="Tokyo|139.6917|9">도쿄, 일본 (Standard UTC+9)</option>
+                            <option value="Beijing|116.4074|8">베이징, 중국 (Standard UTC+8)</option>
+                            <option value="Singapore|103.8198|8">싱가포르 (Standard UTC+8)</option>
+                            <option value="London|-0.1278|0">런던, 영국 (Standard UTC+0)</option>
+                            <option value="Paris|2.3522|1">파리, 프랑스 (Standard UTC+1)</option>
+                            <option value="New York|-74.0060|-5">뉴욕, 미국 (Standard UTC-5)</option>
+                            <option value="Los Angeles|-118.2437|-8">로스앤젤레스, 미국 (Standard UTC-8)</option>
+                            <option value="Sydney|151.2093|10">시드니, 호주 (Standard UTC+10)</option>
+                        </optgroup>
+                    </select>
+                </div>
+
+
+                <div class="form-group">
+                    <label for="real_mbti">본래 알고 있는 MBTI (선택)</label>
+                    <select id="real_mbti" name="real_mbti">
+                        <option value="">알지 못함</option>
+                        <option value="ISTJ">ISTJ</option>
+                        <option value="ISFJ">ISFJ</option>
+                        <option value="INFJ">INFJ</option>
+                        <option value="INTJ">INTJ</option>
+                        <option value="ISTP">ISTP</option>
+                        <option value="ISFP">ISFP</option>
+                        <option value="INFP">INFP</option>
+                        <option value="INTP">INTP</option>
+                        <option value="ESTP">ESTP</option>
+                        <option value="ESFP">ESFP</option>
+                        <option value="ENFP">ENFP</option>
+                        <option value="ENTP">ENTP</option>
+                        <option value="ESTJ">ESTJ</option>
+                        <option value="ESFJ">ESFJ</option>
+                        <option value="ENFJ">ENFJ</option>
+                        <option value="ENTJ">ENTJ</option>
+                    </select>
+                </div>
+
+                <button type="submit" id="submit-btn">기질 분석하기</button>
+            </form>
+        </section>
+
+        <!-- Right: Results & Analysis View -->
+        <section class="results-section">
+            <!-- Go Back Button (hidden by default) -->
+            <div id="back-button-container" class="hidden" style="display: flex; justify-content: flex-start; margin-bottom: 1.5rem; width: 100%;">
+                <button type="button" id="back-to-input-btn" class="btn-back" style="width: auto; margin-top: 0; padding: 0.6rem 1.2rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-left"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+                    <span>입력창으로 돌아가기</span>
+                </button>
+            </div>
+
+            <!-- 1. Placeholder -->
+            <div id="placeholder" class="placeholder-box">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sparkles"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275Z"/><path d="m5 3 1 2.5L8.5 6 6 7 5 9.5 4 7 1.5 6 4 5.5Z"/><path d="m19 17 1 2.5 2.5.5-2.5 1-1 2.5-1-2.5-2.5-1 2.5-1Z"/></svg>
+                <h3>사주 정보 입력을 기다리고 있습니다</h3>
+                <p class="subtitle" style="margin-top: 0.5rem;">왼쪽 입력 폼에 정확한 달력 종류와 출생시각을 채워 넣으신 후 '기질 분석하기' 버튼을 눌러주세요.</p>
+            </div>
+
+            <!-- 2. Loading state -->
+            <div id="loader" class="loader-box hidden">
+                <div class="spinner"></div>
+                <p>우주와 태양의 경도를 계산하여 사주팔자를 계산하는 중...</p>
+            </div>
+
+            <!-- 3. Real content container -->
+            <div id="result-content" class="hidden" style="display: flex; flex-direction: column; gap: 2rem;">
+                
+                <!-- Rank MBTIs & Pillars Grid -->
+                <div class="results-grid-top">
+                    <!-- Rank Card Options -->
+                    <div class="card" style="padding: 1.5rem;">
+                        <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.45rem; margin-bottom: 1rem; color: var(--text-muted);">추정 MBTI 순위</h3>
+                        <div class="rank-container">
+                            <div class="rank-card">
+                                <div class="rank-title">2순위</div>
+                                <div class="mbti-type" id="rank-2-val">-</div>
+                            </div>
+                            <div class="rank-card rank-1">
+                                <div class="rank-title" style="color: var(--primary);">★ 1순위</div>
+                                <div class="mbti-type" id="rank-1-val">-</div>
+                            </div>
+                            <div class="rank-card">
+                                <div class="rank-title">3순위</div>
+                                <div class="mbti-type" id="rank-3-val">-</div>
+                            </div>
+                        </div>
+                        <div style="text-align: center; margin-top: 0.8rem; display: flex; flex-direction: column; gap: 0.5rem; align-items: center;">
+                            <span class="badge" id="yin-yang-ratio-badge">양 기운 -% | 음 기운 -%</span>
+                            <span class="badge" id="calendar-conversion-info" style="background: rgba(59, 82, 246, 0.1); color: #60a5fa; border-color: rgba(59, 82, 246, 0.2);">-</span>
+                        </div>
+                    </div>
+
+                    <!-- Saju Pillars -->
+                    <div class="card" style="padding: 1.5rem;">
+                        <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.45rem; margin-bottom: 1rem; color: var(--text-muted);">사주팔자 명식</h3>
+                        <div class="pillar-grid">
+                            <div class="pillar-box">
+                                <div class="pillar-name">시주</div>
+                                <div class="pillar-chars" id="pillar-hour">-</div>
+                            </div>
+                            <div class="pillar-box">
+                                <div class="pillar-name">일주</div>
+                                <div class="pillar-chars" id="pillar-day" style="background: linear-gradient(135deg, #a855f7, #f43f5e); -webkit-background-clip: text;">-</div>
+                            </div>
+                            <div class="pillar-box">
+                                <div class="pillar-name">월주</div>
+                                <div class="pillar-chars" id="pillar-month">-</div>
+                            </div>
+                            <div class="pillar-box">
+                                <div class="pillar-name">연주</div>
+                                <div class="pillar-chars" id="pillar-year">-</div>
+                            </div>
+                        </div>
+                        <div style="font-size: 0.85rem; line-height: 1.5; color: var(--text-muted); text-align: center;">
+                            중요 특징: 일주 천간(일간)을 핵심 기질의 기준으로 해석합니다.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Element Scores and MBTI Axes Progress -->
+                <div class="results-grid-top">
+                    <!-- Left: Elements -->
+                    <div class="card" style="padding: 1.5rem;">
+                        <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.45rem; margin-bottom: 1.25rem;">오행 점수 분포</h3>
+                        <div id="elements-container">
+                            <!-- JS will populate -->
+                        </div>
+                    </div>
+
+                    <!-- Right: MBTI Axes -->
+                    <div class="card" style="padding: 1.5rem;">
+                        <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.45rem; margin-bottom: 1.25rem;">MBTI 축별 선호도</h3>
+                        <div id="axes-container">
+                            <!-- JS will populate -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 인생 운 & 성향 변화 그래프 Section (NEW) -->
+                <div class="card detail-card" style="padding: 1.5rem;">
+                    <h3>인생 운 흐름 & 성향 변화 그래프</h3>
+                    <p class="subtitle" style="margin-bottom: 1.5rem;">사주 대운(10년 주기)과 세운(연간 주기)의 오행 배치를 분석하여 산출한 인생 운 흐름도와 시기별 MBTI 성향 변화 추이를 보여줍니다.</p>
+                    
+                    <div style="position: relative; height: 350px; width: 100%; margin-bottom: 1.5rem;">
+                        <canvas id="fortuneChart"></canvas>
+                    </div>
+                    
+                    <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 1rem;">
+                        <button type="button" id="explanation-toggle-btn" class="btn-secondary" style="margin-top: 0; width: auto; padding: 0.8rem 1.5rem;">
+                            왜 이렇게 나왔나요? 상세 분석 설명 보기
+                        </button>
+                    </div>
+                    
+                    <!-- Detailed Explanation Panel (Initially Hidden) -->
+                    <div id="explanation-panel" class="hidden" style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--card-border);">
+                        <h4 style="font-size: 1.15rem; color: var(--primary); margin-bottom: 0.75rem;">용신(用神) 및 희신(喜神) 분석</h4>
+                        <div class="scenario-subcard" style="margin-bottom: 1.5rem; background: rgba(15, 23, 42, 0.6);">
+                            <p style="font-size: 0.95rem; line-height: 1.6; color: #cbd5e1; margin-bottom: 0.5rem;" id="yongsin-explanation-text">-</p>
+                            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                                <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #a7f3d0; border-color: rgba(16, 185, 129, 0.3);">용신(용하는 기운): <strong id="val-yongsin">-</strong></span>
+                                <span class="badge" style="background: rgba(59, 82, 246, 0.15); color: #93c5fd; border-color: rgba(59, 82, 246, 0.3);">희신(돕는 기운): <strong id="val-huisin">-</strong></span>
+                                <span class="badge" style="background: rgba(244, 63, 94, 0.15); color: #fecdd3; border-color: rgba(244, 63, 94, 0.3);">기신(꺼리는 기운): <strong id="val-gisin">-</strong></span>
+                            </div>
+                        </div>
+                        
+                        <h4 style="font-size: 1.15rem; color: var(--secondary); margin-bottom: 0.75rem;">대운(大運) 주기별 종합 해석</h4>
+                        <div id="decades-analysis-container" class="scenarios-grid" style="gap: 1rem;">
+                            <!-- Decades items will be populated via JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Analysis Summary and Real Comparison -->
+                <div class="card detail-card">
+
+                    <h3>사주 종합 분석 결과</h3>
+                    <p><strong>강한 오행 및 십성:</strong> 강한 오행은 <span id="strong-elements-text" style="color: var(--primary); font-weight: 700;">-</span>이며, 강한 행동 양식을 정의하는 십성은 <span id="strong-sipsungs-text" style="color: var(--secondary); font-weight: 700;">-</span>입니다.</p>
+                    <p><strong>기질 성향 요약:</strong> <span id="saju-summary-text">-</span></p>
+                    
+                    <div id="mbti-comparison-box" class="hidden">
+                        <h3 style="margin-top: 2rem;">실제 MBTI 대조 결과</h3>
+                        <div class="comparison-grid">
+                            <div class="comp-box">
+                                <div style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">실제 자아인식 MBTI</div>
+                                <div class="comp-val" id="comparison-real">-</div>
+                            </div>
+                            <div class="comp-box">
+                                <div style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">사주 기반 추정 MBTI</div>
+                                <div class="comp-val" id="comparison-estimated">-</div>
+                            </div>
+                        </div>
+                        <p style="margin-top: 1rem;" id="comparison-analysis-text">-</p>
+                    </div>
+
+                    <!-- Detail calculation process trigger button -->
+                    <button type="button" id="breakdown-btn" class="btn-secondary">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; vertical-align:middle; margin-right: 6px;"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                        상세 분석 계산 과정 확인하기 (Breakdown)
+                    </button>
+                </div>
+
+                <!-- 10 Life Scenarios Comparison Section (NEW) -->
+                <div class="card detail-card" id="scenarios-comparison-card">
+                    <h3>인생 10대 행동 상황별 성향 대조 분석</h3>
+                    <p class="subtitle" style="margin-bottom: 1rem;">스스로 생각하는 자아인식 MBTI 성향과 사주 명식에 내포된 선천적 기질이 구체적인 실생활 상황에서 어떻게 상호 보완되거나 대조되는지 대조 분석 리포트를 제공합니다.</p>
+                    
+                    <div id="scenarios-placeholder" style="text-align: center; padding: 2rem; color: var(--text-muted); border: 1px dashed rgba(255, 255, 255, 0.05); border-radius: 12px;">
+                        실제 MBTI를 기입하지 않으셨습니다. 대조 분석 결과를 보시려면 왼쪽 폼에서 실제 MBTI를 선택하고 다시 분석해 주세요.
+                    </div>
+                    
+                    <div class="scenarios-grid id-scenarios-container" id="scenarios-container">
+                        <!-- Dynamic list populated via JS -->
+                    </div>
+                </div>
+
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal backdrop for Saju MBTI analysis breakdown -->
+    <div id="breakdown-modal" class="modal-backdrop">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>상세 수학적 계산 프로세스 로그</h2>
+                <button type="button" class="close-btn" id="modal-close">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                </button>
+            </div>
+            
+            <div class="modal-body">
+                <!-- Step 0. Date Conversion -->
+                <div class="step-section">
+                    <div class="step-title">
+                        <span class="badge" style="background: rgba(96, 165, 250, 0.15); color: #93c5fd; border-color: rgba(96, 165, 250, 0.3);">Step 0</span>
+                        <span>음/양력 생일 및 달력 변환 정보</span>
+                    </div>
+                    <div class="step-body">
+                        <ul class="calc-list">
+                            <li id="calc-calendar-text">-</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Step 1. Elements -->
+                <div class="step-section">
+                    <div class="step-title">
+                        <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #a7f3d0; border-color: rgba(16, 185, 129, 0.3);">Step 1</span>
+                        <span>오행 점수 연산 내역 (글자당 가중치)</span>
+                    </div>
+                    <div class="step-body">
+                        <ul class="calc-list" id="calc-elements-list">
+                            <!-- JS will populate -->
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Step 2. Season Adjustment -->
+                <div class="step-section">
+                    <div class="step-title">
+                        <span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #fde68a; border-color: rgba(245, 158, 11, 0.3);">Step 2</span>
+                        <span>월지 기준 계절 보정</span>
+                    </div>
+                    <div class="step-body">
+                        <ul class="calc-list">
+                            <li id="calc-season-text">-</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Step 3. Sipsung -->
+                <div class="step-section">
+                    <div class="step-title">
+                        <span class="badge" style="background: rgba(59, 82, 246, 0.15); color: #bfdbfe; border-color: rgba(59, 82, 246, 0.3);">Step 3</span>
+                        <span>일간 기준 십성 매핑 및 연산</span>
+                    </div>
+                    <div class="step-body">
+                        <ul class="calc-list" id="calc-sipsung-list">
+                            <!-- JS will populate -->
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Step 4. Yin Yang -->
+                <div class="step-section">
+                    <div class="step-title">
+                        <span class="badge" style="background: rgba(244, 63, 94, 0.15); color: #fecdd3; border-color: rgba(244, 63, 94, 0.3);">Step 4</span>
+                        <span>전체 음양 비율 보정</span>
+                    </div>
+                    <div class="step-body">
+                        <ul class="calc-list">
+                            <li id="calc-yinyang-text">-</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Step 5. Formulas -->
+                <div class="step-section">
+                    <div class="step-title">
+                        <span class="badge" style="background: rgba(168, 85, 247, 0.15); color: #f3e8ff; border-color: rgba(168, 85, 247, 0.3);">Step 5</span>
+                        <span>MBTI 4개 축별 수식 대입 결과</span>
+                    </div>
+                    <div class="step-body" id="calc-formulas-box">
+                        <!-- JS will populate with code blocks -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <hr>
+        <p>본 기질 해석은 생년월일시의 동양 역학적 상징 체계를 MBTI 이론과 연계하여 개발한 가설적 매핑 모델(Hypothetical Mapping Model)에 의거하여 추정한 것이며, 과학적으로 검증된 완벽한 인격/성격 검사 진단이 아닙니다. 개인의 자아 탐색 및 흥미 목적 연구용으로 활용해주시기 바랍니다.</p>
+        <p style="margin-top: 0.5rem;">&copy; 2026 사주 & MBTI 가설 매핑 연구단. All rights reserved.</p>
+    </footer>
+
+    <script>
+        const elementsConfig = {
+            '목': { name: '목 (木 - 나무)', color: 'var(--color-wood)', desc: '성장, 가능성, 이상주의, 열정, 융통성 (N, P 가산)' },
+            '화': { name: '화 (火 - 불)', color: 'var(--color-fire)', desc: '표현력, 감정 발산, 대인 상호작용 (E, F 가산)' },
+            '토': { name: '토 (土 - 흙)', color: 'var(--color-earth)', desc: '현실감, 신뢰, 안정, 관리 능력 (S, J 가산)' },
+            '금': { name: '금 (金 - 쇠)', color: 'var(--color-metal)', desc: '절제, 원칙, 효율성, 구조화된 분석 (T, J 가산)' },
+            '수': { name: '수 (水 - 물)', color: 'var(--color-water)', desc: '사고력, 지혜, 내면적 성찰, 상상력 (I, N 가산)' }
+        };
+
+        const form = document.getElementById('analyze-form');
+        const placeholder = document.getElementById('placeholder');
+        const loader = document.getElementById('loader');
+        const resultCode = document.getElementById('result-content');
+
+        // Modal Elements
+        const modal = document.getElementById('breakdown-modal');
+        const breakdownBtn = document.getElementById('breakdown-btn');
+        const modalClose = document.getElementById('modal-close');
+
+        // Back Button & Layout elements
+        const backBtnContainer = document.getElementById('back-button-container');
+        const backToInputBtn = document.getElementById('back-to-input-btn');
+        const inputSection = document.querySelector('.input-section');
+        const mainContainer = document.querySelector('main');
+
+        let lastResultData = null; // Store for modal rendering
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // Hide input section and adjust layout
+            inputSection.classList.add('hidden');
+            mainContainer.classList.add('results-active');
+            backBtnContainer.classList.remove('hidden');
+
+            placeholder.classList.add('hidden');
+            resultCode.classList.add('hidden');
+            loader.classList.remove('hidden');
+
+            const formData = new FormData(form);
+            const citySelectVal = formData.get('city_select');
+            const [city, longitude, utcOffset] = citySelectVal.split('|');
+
+            const data = {
+                calendar_type: formData.get('calendar_type'),
+                gender: formData.get('gender'),
+                year: parseInt(formData.get('year')),
+                month: parseInt(formData.get('month')),
+                day: parseInt(formData.get('day')),
+                hour: parseInt(formData.get('hour')),
+                minute: parseInt(formData.get('minute')),
+                city: city,
+                longitude: parseFloat(longitude),
+                utc_offset: parseFloat(utcOffset),
+                real_mbti: formData.get('real_mbti') || null
+            };
+
+
+            try {
+                const response = await fetch('/api/analyze', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (!response.ok) {
+                    throw new Error('서버 분석 요청에 실패했습니다.');
+                }
+
+                const result = await response.json();
+                lastResultData = result;
+                renderResults(result);
+            } catch (err) {
+                alert(err.message);
+                
+                // Rollback layout on error
+                inputSection.classList.remove('hidden');
+                mainContainer.classList.remove('results-active');
+                backBtnContainer.classList.add('hidden');
+
+                placeholder.classList.remove('hidden');
+                loader.classList.add('hidden');
+            }
+        });
+
+        // Back button click handler
+        backToInputBtn.addEventListener('click', () => {
+            // Restore input section and layout
+            inputSection.classList.remove('hidden');
+            mainContainer.classList.remove('results-active');
+            backBtnContainer.classList.add('hidden');
+
+            // Reset results display state
+            placeholder.classList.remove('hidden');
+            resultCode.classList.add('hidden');
+            loader.classList.add('hidden');
+        });
+
+        // Modal event listeners
+        breakdownBtn.addEventListener('click', () => {
+            if (lastResultData) {
+                populateModal(lastResultData);
+                modal.classList.add('active');
+            }
+        });
+
+        modalClose.addEventListener('click', () => {
+            modal.classList.remove('active');
+        });
+
+        // Close modal when clicking backdrop
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.classList.remove('active');
+            }
+        });
+
+        // Close modal on ESC key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && modal.classList.contains('active')) {
+                modal.classList.remove('active');
+            }
+        });
+
+        // Global chart instance
+        let fortuneChartInstance = null;
+
+        // Explanation panel toggle listener
+        const explanationToggleBtn = document.getElementById('explanation-toggle-btn');
+        const explanationPanel = document.getElementById('explanation-panel');
+        explanationToggleBtn.addEventListener('click', () => {
+            explanationPanel.classList.toggle('hidden');
+            if (explanationPanel.classList.contains('hidden')) {
+                explanationToggleBtn.innerText = '왜 이렇게 나왔나요? 상세 분석 설명 보기';
+            } else {
+                explanationToggleBtn.innerText = '상세 분석 설명 접기';
+            }
+        });
+
+
+        function populateModal(res) {
+            const bd = res.breakdown;
+            const ci = res.calendar_info;
+
+            // Step 0: Date Conversion
+            let calendarText = `입력받은 원본 정보: ${ci.type} [${ci.original}]`;
+            if (ci.is_converted) {
+                calendarText += ` ➔ 양력 환산 완료: [${ci.converted_solar}] (만세력 대조용 양력 환산 완료)`;
+            } else {
+                calendarText += ` ➔ 양력 대조용 동일 날짜로 진행`;
+            }
+            document.getElementById('calc-calendar-text').innerText = calendarText;
+
+            // Step 1: Elements
+            const elemList = document.getElementById('calc-elements-list');
+            elemList.innerHTML = '';
+            bd.element_calculation.forEach(item => {
+                const li = document.createElement('li');
+                li.innerText = item;
+                elemList.appendChild(li);
+            });
+
+            // Step 2: Season
+            document.getElementById('calc-season-text').innerText = bd.season_adjustment || "계절 보정 내역 없음";
+
+            // Step 3: Sipsung
+            const sipsungList = document.getElementById('calc-sipsung-list');
+            sipsungList.innerHTML = '';
+            bd.sipsung_calculation.forEach(item => {
+                const li = document.createElement('li');
+                li.innerText = item;
+                sipsungList.appendChild(li);
+            });
+
+            // Step 4: Yin Yang
+            document.getElementById('calc-yinyang-text').innerText = bd.yinyang_adjustment || "음양 보정 내역 없음";
+
+            // Step 5: Formulas
+            const formulaBox = document.getElementById('calc-formulas-box');
+            formulaBox.innerHTML = '';
+            const axes = ['E', 'I', 'S', 'N', 'T', 'F', 'J', 'P'];
+            axes.forEach(char => {
+                const fText = bd.mbti_formulas[char];
+                if (fText) {
+                    const codeDiv = document.createElement('div');
+                    codeDiv.className = 'formula-box';
+                    codeDiv.innerText = fText;
+                    formulaBox.appendChild(codeDiv);
+                }
+            });
+        }
+
+        function renderResults(res) {
+            loader.classList.add('hidden');
+            resultCode.classList.remove('hidden');
+
+            // Render yongsin info
+            document.getElementById('yongsin-explanation-text').innerText = res.yongsin_info.reason;
+            document.getElementById('val-yongsin').innerText = res.yongsin_info.yongsin;
+            document.getElementById('val-huisin').innerText = res.yongsin_info.huisin;
+            document.getElementById('val-gisin').innerText = res.yongsin_info.gisin;
+
+            // Render decades analysis
+            const decadesContainer = document.getElementById('decades-analysis-container');
+            decadesContainer.innerHTML = '';
+            res.decades_analysis.forEach(item => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'scenario-item';
+                itemDiv.style.padding = '1.25rem';
+                itemDiv.innerHTML = `
+                    <div class="scenario-title" style="margin-bottom: 0.5rem; font-size: 1.05rem;">
+                        <span>${item.pillar} <span style="font-size:0.85rem; color:var(--text-muted); font-weight:normal;">[평균 운: ${item.score}점]</span></span>
+                        <span class="badge" style="background: rgba(168, 85, 247, 0.15); color: #d8b4fe; border-color: rgba(168, 85, 247, 0.3);">${item.age_range}</span>
+                    </div>
+                    <p style="font-size: 0.9rem; line-height: 1.6; color: #cbd5e1;">${item.desc}</p>
+                `;
+                decadesContainer.appendChild(itemDiv);
+            });
+
+            // Reset explanation panel visibility
+            explanationPanel.classList.add('hidden');
+            explanationToggleBtn.innerText = '왜 이렇게 나왔나요? 상세 분석 설명 보기';
+
+            // Render Chart.js
+            if (fortuneChartInstance) {
+                fortuneChartInstance.destroy();
+            }
+
+            const ages = res.fortune_scores.map(x => x.age);
+            const scores = res.fortune_scores.map(x => x.score);
+            const daeuns = res.fortune_scores.map(x => x.daeun_pillar);
+            const seouns = res.fortune_scores.map(x => x.seoun_pillar);
+            const mbtis = res.fortune_scores.map(x => x.mbti);
+            const years = res.fortune_scores.map(x => x.year);
+
+            const ctx = document.getElementById('fortuneChart').getContext('2d');
+            fortuneChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ages.map(a => `${a}세`),
+                    datasets: [{
+                        label: '인생 종합 운세 점수',
+                        data: scores,
+                        borderColor: '#a855f7',
+                        backgroundColor: 'rgba(168, 85, 247, 0.15)',
+                        borderWidth: 2,
+                        pointRadius: 1,
+                        pointHoverRadius: 5,
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: '#1e293b',
+                            titleColor: '#f8fafc',
+                            bodyColor: '#cbd5e1',
+                            borderColor: 'rgba(255, 255, 255, 0.1)',
+                            borderWidth: 1,
+                            padding: 10,
+                            callbacks: {
+                                label: function(context) {
+                                    const idx = context.dataIndex;
+                                    return [
+                                        `운세 점수: ${scores[idx]}점`,
+                                        `서기 연도: ${years[idx]}년`,
+                                        `대운: ${daeuns[idx]}`,
+                                        `세운: ${seouns[idx]}`,
+                                        `시기별 성향(MBTI): ${mbtis[idx]}`
+                                    ];
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.03)'
+                            },
+                            ticks: {
+                                color: '#94a3b8',
+                                maxTicksLimit: 15
+                            }
+                        },
+                        y: {
+                            min: 10,
+                            max: 100,
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.05)'
+                            },
+                            ticks: {
+                                color: '#94a3b8',
+                                stepSize: 10
+                            }
+                        }
+                    }
+                }
+            });
+
+            const estMbti = res.options[0];
+
+
+            document.getElementById('rank-1-val').innerText = estMbti;
+            document.getElementById('rank-2-val').innerText = res.options[1];
+            document.getElementById('rank-3-val').innerText = res.options[2];
+            
+            document.getElementById('yin-yang-ratio-badge').innerText = `양(陽) 기운 ${res.yang_ratio}% | 음(陰) 기운 ${res.yin_ratio}%`;
+
+            // Calendar conversion info badge
+            const ci = res.calendar_info;
+            const infoBadge = document.getElementById('calendar-conversion-info');
+            if (ci.is_converted) {
+                infoBadge.innerText = `🔄 음력 평달/윤달 ➔ 양력 환산: ${ci.converted_solar}`;
+                infoBadge.classList.remove('hidden');
+            } else {
+                infoBadge.innerText = `☀ 양력 기준 명식 분석 완료`;
+                infoBadge.classList.remove('hidden');
+            }
+
+            document.getElementById('pillar-year').innerText = res.pillars.연주.full;
+            document.getElementById('pillar-month').innerText = res.pillars.월주.full;
+            document.getElementById('pillar-day').innerText = res.pillars.일주.full;
+            document.getElementById('pillar-hour').innerText = res.pillars.시주.full;
+
+            const elemContainer = document.getElementById('elements-container');
+            elemContainer.innerHTML = '';
+            
+            const sortedElems = Object.entries(res.element_scores).sort((a,b) => b[1] - a[1]);
+            const maxElemScore = Math.max(...sortedElems.map(e => e[1])) || 1;
+
+            sortedElems.forEach(([key, val]) => {
+                const config = elementsConfig[key];
+                const pct = (val / maxElemScore) * 100;
+                
+                const group = document.createElement('div');
+                group.className = 'elem-bar-group';
+                group.innerHTML = `
+                    <div class="elem-info">
+                        <div class="elem-name">
+                            <div class="elem-dot" style="background-color: ${config.color}"></div>
+                            <span>${config.name}</span>
+                        </div>
+                        <span style="color: var(--text-main); font-weight: 700;">${val.toFixed(2)} 점</span>
+                    </div>
+                    <div class="elem-bar-bg">
+                        <div class="elem-bar-fill" style="width: ${pct}%; background-color: ${config.color}"></div>
+                    </div>
+                    <div style="font-size: 0.95rem; color: var(--text-muted); margin-top: 0.2rem; padding-left: 0.8rem;">
+                        ${config.desc}
+                    </div>
+                `;
+                elemContainer.appendChild(group);
+            });
+
+            const axesContainer = document.getElementById('axes-container');
+            axesContainer.innerHTML = '';
+
+            const axes = ['E/I', 'S/N', 'T/F', 'J/P'];
+            axes.forEach(axis => {
+                const [leftChar, rightChar] = axis.split('/');
+                const leftScore = res.scores[leftChar];
+                const rightScore = res.scores[rightChar];
+                const total = leftScore + rightScore;
+                
+                const leftPct = total > 0 ? (leftScore / total) * 100 : 50;
+                const rightPct = 100 - leftPct;
+
+                const dec = res.axis_results[axis].decision;
+                const strength = res.axis_results[axis].strength;
+
+                const row = document.createElement('div');
+                row.className = 'axis-row';
+                row.innerHTML = `
+                    <div class="axis-header">
+                        <span>선호 강도: <span style="color: var(--primary);">${strength}</span></span>
+                        <span class="badge" style="background: rgba(59, 82, 246, 0.15); color: #93c5fd; border-color: rgba(59, 82, 246, 0.3);">${dec} 판정</span>
+                    </div>
+                    <div class="axis-bar-container">
+                        <div class="axis-left-fill" style="width: ${leftPct}%"></div>
+                        <div class="axis-right-fill" style="width: ${rightPct}%"></div>
+                        <div class="axis-center-line"></div>
+                    </div>
+                    <div class="axis-labels">
+                        <div>
+                            <span>${leftChar}</span> <span class="axis-val">(${leftScore.toFixed(2)})</span>
+                        </div>
+                        <div>
+                            <span class="axis-val">(${rightScore.toFixed(2)})</span> <span>${rightChar}</span>
+                        </div>
+                    </div>
+                `;
+                axesContainer.appendChild(row);
+            });
+
+            document.getElementById('strong-elements-text').innerText = res.strong_elements.join(', ') || '없음';
+            document.getElementById('strong-sipsungs-text').innerText = res.strong_sipsungs.join(', ') || '없음';
+            
+            const strongE = res.strong_elements[0] || '';
+            const strongS = res.strong_sipsungs[0] || '';
+            
+            let summaryText = `본 사주는 ${strongE} 기운을 다분히 내포하고 있어 `;
+            if (['목', '화'].includes(strongE)) {
+                summaryText += "외향적으로 에너지를 분출하고 관계 속에서 조화를 찾는 경향성을 보입니다. ";
+            } else {
+                summaryText += "내향적인 사고 성향과 논리적 판단, 체계적이고 현실적인 기질이 깊게 깔려 있습니다. ";
+            }
+
+            if (['식신', '상관'].includes(strongS)) {
+                summaryText += "특히 자유로운 상상력과 표현 중심의 성향이 두드러져 1순위로 추정된 MBTI 유형이 잘 발현될 수 있습니다.";
+            } else if (['정재', '정관'].includes(strongS)) {
+                summaryText += "더불어 성실함과 투철한 책임감, 체계적인 안정성을 지향하는 J/S적 기질이 본성 깊숙이 흐르고 있는 것으로 사료됩니다.";
+            } else {
+                summaryText += "이 가설적 매핑 규칙에 따라 산출된 최종 1순위 유형의 성향이 사용자의 사회적 기질적 원판에 가장 가까운 양상으로 추정됩니다.";
+            }
+
+            document.getElementById('saju-summary-text').innerText = summaryText;
+
+            const compBox = document.getElementById('mbti-comparison-box');
+            
+            // 10 Scenarios comparison DOM handling
+            const scenariosContainer = document.getElementById('scenarios-container');
+            const scenariosPlaceholder = document.getElementById('scenarios-placeholder');
+            
+            if (res.real_mbti) {
+                compBox.classList.remove('hidden');
+                document.getElementById('comparison-real').innerText = res.real_mbti.toUpperCase();
+                document.getElementById('comparison-estimated').innerText = estMbti;
+
+                let matchCount = 0;
+                const realStr = res.real_mbti.toUpperCase();
+                for (let i = 0; i < 4; i++) {
+                    if (realStr[i] === estMbti[i]) matchCount++;
+                }
+
+                const compValBox = document.getElementById('comparison-estimated');
+                if (matchCount === 4) {
+                    compValBox.className = 'comp-val match';
+                } else {
+                    compValBox.className = 'comp-val';
+                }
+
+                let comparisonAnalysis = `실제 본인이 응답한 MBTI와 사주 기반 추정 MBTI의 4개 축 중 **${matchCount}개** 축이 일치합니다. `;
+                if (matchCount === 4) {
+                    comparisonAnalysis += "타고난 선천적 기질 성향이 후천적인 자아 정체성으로 아주 일관성 있게 구현된 케이스로 유추해 볼 수 있습니다.";
+                } else if (matchCount >= 2) {
+                    comparisonAnalysis += "사회적 가치관이나 환경적 직무 요인 등으로 인해 특정 축의 지향성이 다르게 인식될 수 있으나, 사주 원판에 내포된 기본적 기질 기틀은 1순위~3순위 추정 유형 안에 대부분 포함되어 나타납니다.";
+                } else {
+                    comparisonAnalysis += "후천적인 성장 환경, 교육 및 개인적 노력 등으로 인해 자기보고식 MBTI의 인식 축이 선천적 사주 원형 기질과 상당히 다르게 형성되어 발현되는 경우일 가능성이 큽니다.";
+                }
+                
+                document.getElementById('comparison-analysis-text').innerHTML = comparisonAnalysis;
+
+                // Render 10 Scenarios Comparisons
+                scenariosPlaceholder.classList.add('hidden');
+                scenariosContainer.classList.remove('hidden');
+                scenariosContainer.innerHTML = '';
+                
+                res.scenarios_comparison.forEach(item => {
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = 'scenario-item';
+                    
+                    const badgeHtml = item.is_different 
+                        ? `<span class="badge" style="background: rgba(244, 63, 94, 0.15); color: #fecdd3; border-color: rgba(244, 63, 94, 0.3);">성향 차이</span>`
+                        : `<span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #a7f3d0; border-color: rgba(16, 185, 129, 0.3);">성향 일치</span>`;
+                        
+                    itemDiv.innerHTML = `
+                        <div class="scenario-title">
+                            <span>${item.title}</span>
+                            ${badgeHtml}
+                        </div>
+                        <div class="scenario-split-box">
+                            <div class="scenario-subcard">
+                                <div class="subcard-header real">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; vertical-align:middle;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                    자아인식 MBTI [${res.real_mbti.toUpperCase()}]
+                                </div>
+                                <div class="scenario-text">${item.real_desc}</div>
+                            </div>
+                            <div class="scenario-subcard">
+                                <div class="subcard-header est">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; vertical-align:middle;"><path d="M12 2v20"/><path d="m17 5-5-3-5 3"/><path d="m17 19-5 3-5-3"/><circle cx="12" cy="12" r="3"/></svg>
+                                    사주기반추정 [${estMbti}]
+                                </div>
+                                <div class="scenario-text">${item.est_desc}</div>
+                            </div>
+                        </div>
+                    `;
+                    scenariosContainer.appendChild(itemDiv);
+                });
+            } else {
+                compBox.classList.add('hidden');
+                scenariosPlaceholder.classList.remove('hidden');
+                scenariosContainer.classList.add('hidden');
+            }
+        }
+    </script>
+</body>
+</html>

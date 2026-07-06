@@ -1,5 +1,4 @@
 import sys
-import argparse
 import codecs
 from sajupy import SajuCalculator
 
@@ -25,6 +24,16 @@ STEMS = {
 }
 
 BRANCHES = {
+    '자': {'element': '수', 'yin_yang': '양', 'kor': '자'},
+    '축': {'element': '토', 'yin_yang': '음', 'kor': '축'},
+    '인': {'element': '목', 'yin_yang': '양', 'kor': '인'},
+    '묘': {'element': '목', 'yin_yang': '음', 'kor': '묘'},
+    '진': {'element': '토', 'yin_yang': '양', 'kor': '진'},
+    '사': {'element': '화', 'yin_yang': '음', 'kor': '사'},
+    '오': {'element': '화', 'yin_yang': '양', 'kor': '오'},
+    '미': {'element': '토', 'yin_yang': '음', 'kor': '미'},
+    '신': {'element': '금', 'yin_yang': '양', 'kor': '신'},
+    '유': {'element': '금', 'yin_yang': '음', 'kor': '유'},
     '子': {'element': '수', 'yin_yang': '양', 'kor': '자'},
     '丑': {'element': '토', 'yin_yang': '음', 'kor': '축'},
     '寅': {'element': '목', 'yin_yang': '양', 'kor': '인'},
@@ -39,6 +48,7 @@ BRANCHES = {
     '亥': {'element': '수', 'yin_yang': '음', 'kor': '해'},
 }
 
+
 ELEMENT_RELATIONS = {
     '목': {'생': '화', '극': '토', '생함받음': '수', '극당함': '금'},
     '화': {'생': '토', '극': '금', '생함받음': '목', '극당함': '수'},
@@ -47,7 +57,6 @@ ELEMENT_RELATIONS = {
     '수': {'생': '목', '극': '화', '생함받음': '금', '극당함': '토'},
 }
 
-# Weights
 POSITION_WEIGHTS = {
     '연주': 0.8,
     '월주': 1.5,
@@ -81,41 +90,239 @@ def get_sipsung(day_stem, target_char):
     if not day_elem or not t_elem:
         return None
         
-    # Same element
     if day_elem == t_elem:
         return '비견' if day_yy == t_yy else '겁재'
         
-    # Day stem generates target (식상)
     if ELEMENT_RELATIONS[day_elem]['생'] == t_elem:
         return '식신' if day_yy == t_yy else '상관'
         
-    # Day stem controls target (재성)
     if ELEMENT_RELATIONS[day_elem]['극'] == t_elem:
         return '편재' if day_yy == t_yy else '정재'
         
-    # Target controls day stem (관성)
     if ELEMENT_RELATIONS[day_elem]['극당함'] == t_elem:
         return '편관' if day_yy == t_yy else '정관'
         
-    # Target generates day stem (인성)
     if ELEMENT_RELATIONS[day_elem]['생함받음'] == t_elem:
         return '편인' if day_yy == t_yy else '정인'
         
     return None
 
-def analyze_saju_mbti(year, month, day, hour, minute, city="Seoul", real_mbti=None):
+# NEW: Integrated 10 scenarios comparison logic
+def generate_integrated_scenarios(res, real_mbti):
+    if not real_mbti:
+        return []
+        
+    real_mbti = real_mbti.upper()
+    est_mbti = res['options'][0].upper()
+    
+    # Extract MBTI components
+    r_e, r_s, r_t, r_j = real_mbti[0], real_mbti[1], real_mbti[2], real_mbti[3]
+    e_e, e_s, e_t, e_j = est_mbti[0], est_mbti[1], est_mbti[2], est_mbti[3]
+    
+    # Extract Saju core qualities
+    strong_elements = res['strong_elements']
+    strong_sipsungs = res['strong_sipsungs']
+    strong_elem = strong_elements[0] if strong_elements else '토'
+    strong_ss = strong_sipsungs[0] if strong_sipsungs else '비견'
+    
+    scenarios = []
+
+    # Scenario 1 (EI Axis)
+    scenarios.append({
+        'key': 'scenario_1',
+        'title': '1. 에너지 충전과 사회적 교류',
+        'real_desc': '대외 활동이나 주변인과의 왕성한 대면 소통을 거쳐 활력을 수혈받는 능동형 충전 방식을 활용합니다.' if r_e == 'E' 
+                     else '소수 정예와 함께하거나 고요한 정적의 공간에서 자아 성찰을 통해 닳아버린 정신적 활력을 보급합니다.',
+        'est_desc': '외향 기운(화/목 기운 혹은 식상 발달)이 지배하여 역동적인 사회 활동과 교류를 통해 에너지를 재충전하는 기질입니다.' if e_e == 'E'
+                     else '내향 기운(수/금 기운 혹은 인성/비견 발달)이 강하여 조용히 혼자 있는 방랑이나 고독에서 정신 에너지를 채우는 기질입니다.',
+        'is_different': r_e != e_e
+    })
+
+    # Scenario 2 (SN Axis)
+    scenarios.append({
+        'key': 'scenario_2',
+        'title': '2. 정보 수집과 세상을 보는 눈',
+        'real_desc': '눈앞에 객관적으로 증명되는 팩트와 디테일한 수치, 과거 경험 데이터를 기준으로 사태를 명확하게 수집합니다.' if r_s == 'S'
+                     else '눈에 보이는 것 이상의 이면 맥락, 거시적 아이디어, 미래가 가진 비전과 은유적 직관성을 통해 파악합니다.',
+        'est_desc': '토(土)/금(金) 등 조형적 실체가 강해 당장의 눈앞의 실리와 증명 가능한 현실 디테일을 확실히 보는 기질입니다.' if e_s == 'S'
+                     else '목(木)/수(水) 등 상징적 성장이 발달하여 팩트 너머의 패턴과 거시적 상상력, 무형의 비전을 직관하는 기질입니다.',
+        'is_different': r_s != e_s
+    })
+
+    # Scenario 3 (TF Axis)
+    scenarios.append({
+        'key': 'scenario_3',
+        'title': '3. 의사결정과 최우선 가치 기준',
+        'real_desc': '논리적 팩트 검증과 객관적인 효율성, 엄정한 규칙과 공정성을 잣대 삼아 명료하게 의사결정을 내립니다.' if r_t == 'T'
+                     else '인간적인 유대와 정서적 가치, 타인의 감정에 미칠 영향과 상호 공감 및 도덕적 가치를 중심에 두고 판단합니다.',
+        'est_desc': '금(金)과 관성이 발달해 차갑고 냉철한 시시비비와 시스템의 공적 효율, 이성적 최적화를 최우선 의결 기준으로 삼는 기질입니다.' if e_t == 'T'
+                     else '화(火)와 식신/정인이 결합하여 따스한 감성적 연결, 관계의 평화적 조화와 타인의 마음에 공감하는 것을 최우선하는 기질입니다.',
+        'is_different': r_t != e_t
+    })
+
+    # Scenario 4 (JP Axis)
+    scenarios.append({
+        'key': 'scenario_4',
+        'title': '4. 행동 방식과 일과 시간 관리',
+        'real_desc': '일정과 목표를 꼼꼼하게 정리하고, 예기치 못한 차질이 생기지 않도록 매사 매뉴얼대로 진행하는 데서 안전감을 얻습니다.' if r_j == 'J'
+                     else '계획에 지배당하기보다 수시로 유연한 융통성을 발휘해 그날의 최선 흐름에 맞춰 임기응변으로 상황에 적응합니다.',
+        'est_desc': '토(土)와 관성/정재의 안정 통제가 작용해 단단한 절차 수립과 정리정돈, 질서 있는 통제를 생활화하려는 성향입니다.' if e_j == 'J'
+                     else '식상과 비겁의 분출성이 지배하여 정해진 규칙에 속박되지 않고 즉흥적으로 자유롭게 시도하고 발산하려는 유연 기질입니다.',
+        'is_different': r_j != e_j
+    })
+
+    # Scenario 5 (Motivation - Integrated)
+    # MBTI group motivation
+    r_group = 'NF' if r_s + r_t in ['NF', 'SF'] and r_t == 'F' else ('NT' if r_t == 'T' and r_s == 'N' else ('SJ' if r_s == 'S' and r_j == 'J' else 'SP'))
+    if r_group == 'NF':
+        r_mot = "진정성 있는 삶, 인간적 조화와 깊은 자아실현을 갈망합니다."
+    elif r_group == 'NT':
+        r_mot = "지적인 자아 확장, 논리적 시스템 개혁, 지식의 완벽성을 추구합니다."
+    elif r_group == 'SJ':
+        r_mot = "가정, 사회 및 조직의 전통 질서와 안정을 성실하게 지키는 성취를 지향합니다."
+    else:
+        r_mot = "자유로운 신체/정신적 자기표현과 제약 없는 모험, 실용적 유희를 지향합니다."
+
+    # Saju core motivation
+    if strong_ss in ['정관', '편관', '정재', '편재'] or strong_elem in ['토', '금']:
+        e_mot = f"강한 {strong_elem} 기운과 {strong_ss}의 작용으로, 세속적인 성공 기반과 실리적인 자산 지배권, 혹은 확실히 검증된 명예 권위를 안전하게 확보하려는 강한 현실 욕망을 품고 있습니다."
+    elif strong_ss in ['식신', '상관'] or strong_elem in ['목', '화']:
+        e_mot = f"강렬한 {strong_elem} 기운과 {strong_ss}의 영향으로, 외부적 통제에 맞서 본인의 창의적 재능과 자아 가치를 끊임없이 표현하고 성장시키며 뽐내고자 하는 욕망이 큽니다."
+    elif strong_ss in ['편인', '정인'] or strong_elem == '수':
+        e_mot = f"깊은 {strong_elem} 기운과 {strong_ss}이 내면화되어 세속적 지위 다툼에서 한 발 물러나 학문적 깊이, 지혜의 체득, 영적이고 철학적인 지적 사유의 발전을 추구합니다."
+    else:
+        e_mot = f"강한 비겁 기운의 발달로 누구의 간섭도 허용하지 않고 오롯이 나만의 주권과 주체적 고유 영역을 수호하며 독립적인 자아로 서는 것을 갈망합니다."
+        
+    scenarios.append({
+        'key': 'scenario_5',
+        'title': '5. 인생의 근본적 동기 및 욕망',
+        'real_desc': f"자아인식에서는 {r_mot}",
+        'est_desc': f"사주 기질상으로는 {e_mot}",
+        'is_different': ('현실' in e_mot and r_group in ['NF', 'SP']) or ('표현' in e_mot and r_group in ['SJ']) or ('지혜' in e_mot and r_group in ['SP', 'SJ'])
+    })
+
+    # Scenario 6 (Stress - Integrated)
+    if r_e == 'I':
+        r_stress = "열등기능이 과부하되어 통제 불능 상태가 되면 극도로 위축되거나 자가망상 혹은 충동적인 현실 도피에 들어설 확률이 큽니다."
+    else:
+        r_stress = "에너지가 고갈되면 주위 사람들에게 히스테릭한 짜증을 방출하거나 의무와 규칙을 어기고 강박적으로 일을 벌려 주의를 분산시킵니다."
+
+    if strong_ss in ['정관', '편관']:
+        e_stress = "사주에 발달한 억압성(관성)으로 인해 스트레스가 극에 달하면 스스로를 무섭게 처벌하고 우울 속으로 몰아세우며 더욱 강박적으로 시스템을 완벽히 규율하려 듭니다."
+    elif strong_ss in ['식신', '상관']:
+        e_stress = "표출성(식상)이 자극되어 극도로 폭주하면 다듬어지지 않은 날카롭고 거친 말과 감정적 독설을 화끈하게 폭발시켜 주변과의 관계를 순간적으로 파괴하며 정화하려 합니다."
+    elif strong_ss == '비견' or strong_ss == '겁재':
+        e_stress = "비겁의 주체적 자존심이 내몰리면 한 치의 타협도 허용하지 않는 완전한 불통과 고립 장벽을 구축한 채 자기 방으로 칩잠하는 방어기제를 취합니다."
+    else:
+        e_stress = "인성의 수용 기운이 과부하되면 생각의 루프 속에 스스로를 가두고 멍한 무기력에 빠지며, 완전히 세상을 외면하려 함으로써 정서적 방전을 견뎌냅니다."
+
+    scenarios.append({
+        'key': 'scenario_6',
+        'title': '6. 한계 상황과 스트레스 극복 기제',
+        'real_desc': f"자아 보고에 따르면 {r_stress}",
+        'est_desc': f"사주 기질적 무의식으로는 {e_stress}",
+        'is_different': ('폭발' in e_stress and r_e == 'I') or ('칩잠' in e_stress and r_e == 'E')
+    })
+
+    # Scenario 7 (Conflict - Integrated)
+    r_conf = "타인과의 평화와 조화를 갈망해 마찰이 생기면 일단 참거나 양보하여 관계 수선에 앞장섭니다." if r_t == 'F' else "팩트의 정오를 규명하고 무엇이 원리적으로 타당한지 이성적으로 논쟁하여 결판을 짓고자 합니다."
+    if strong_ss in ['식신', '상관', '비견', '겁재']:
+        e_conf = "비식(比食)의 독립·표출 기운이 세서 갈등 발생 시 자존심을 꺾기 힘들어하며 본인의 정당성을 강력하게 입증하거나 피하지 않고 정면 승부를 겨루려 합니다."
+    elif strong_ss in ['정관', '편관', '정인', '편인']:
+        e_conf = "관인(官印)의 통제 기질로 인해 면전에서의 충돌은 가급적 참아 넘기지만, 내심 강한 규칙의 선을 긋고 무례한 대상을 조용히 인생에서 차단(손절)하는 방식을 씁니다."
+    else:
+        e_conf = "재성적 수완을 적극 발휘해 이 갈등이 불러올 현실적 이해득실을 냉정히 주산하여 양자가 가장 실리적으로 윈윈할 수 있는 합의점을 노련하게 협상해 냅니다."
+
+    scenarios.append({
+        'key': 'scenario_7',
+        'title': '7. 대인관계의 갈등 관리 스타일',
+        'real_desc': f"자아 보고로는 {r_conf}",
+        'est_desc': f"사주 기질로는 {e_conf}",
+        'is_different': ('정면 승부' in e_conf and r_t == 'F') or ('조용히 손절' in e_conf and r_t == 'T')
+    })
+
+    # Scenario 8 (Crisis - Integrated)
+    r_crisis = "구조화된 대안 절차를 세워 돌발 상황을 조속히 규칙 통제 하에 두려 조바심을 냅니다." if r_j == 'J' else "위기가 올 때 비로소 특유의 아드레날린을 느껴 순발력 있는 임기응변으로 순탄하게 파도를 타고 넘습니다."
+    if strong_ss in ['비견', '겁재'] or strong_elem == '목':
+        e_crisis = "강건한 주체 생명성(비겁/목)에 힘입어 위기 상황이 닥쳐도 기가 죽지 않고 본인의 고집과 저력으로 파도를 정면돌파하여 부수고 나아가는 돌파력을 뿜어냅니다."
+    elif strong_ss in ['편인', '정인'] or strong_elem == '수':
+        e_crisis = "수(水)의 지혜와 침잠 기질(인성)을 활용해 섣불리 움직이지 않고 일단 상황을 끝까지 관조하며 깊은 인내로 고요히 때를 기다려 지혜롭게 극복합니다."
+    else:
+        e_crisis = "재관의 사회 협력망을 통해 혼자 해결하기보다 주변의 제도, 공적 조직, 자산 파트너들을 가용해 영리하게 리스크를 분산하고 조율해 해결합니다."
+
+    scenarios.append({
+        'key': 'scenario_8',
+        'title': '8. 인생의 전환점과 위기 대처법',
+        'real_desc': f"자아 분석에서는 {r_crisis}",
+        'est_desc': f"사주 오행적 대처는 {e_crisis}",
+        'is_different': ('돌파' in e_crisis and r_j == 'J') or ('관조' in e_crisis and r_j == 'P')
+    })
+
+    # Scenario 9 (Leadership - Integrated)
+    r_lead = "비전과 성장의 이상을 거시적 지향점으로 뿜어내며 동기부여하는 멘토형 리더십을 지향합니다." if r_s == 'N' else "명확한 규정과 분담, 실행 단계별 꼼꼼한 품질 유지를 통해 신뢰를 주는 실무형 수호자 리더십을 보입니다."
+    if strong_ss in ['정관', '편관', '정인', '편인']:
+        e_lead = "관인상생(官印相生)의 모범적 직무 기질로 인해 조직의 보고 체계와 절차를 칼같이 준수하고 안정적으로 계통을 수립하여 관리하는 '규격화된 관리자형' 기질입니다."
+    elif strong_ss in ['식신', '상관', '편재', '정재']:
+        e_lead = "식상생재(食傷生財)의 도전적 수완으로 현장 중심의 창의적 비즈니스를 주도적으로 뚫어내고 이윤을 창출하는 '개척자/프로젝트 지휘관형' 리더십입니다."
+    else:
+        e_lead = "비식(比食)이 발달해 상하 통제를 질색하며 독립 프리랜서형 전문가를 지향해 평등하고 독립적인 분담 하의 느슨한 시너지를 선호합니다."
+
+    scenarios.append({
+        'key': 'scenario_9',
+        'title': '9. 조직 내에서의 협업 및 리더십',
+        'real_desc': f"자아 보고로는 {r_lead}",
+        'est_desc': f"사주 십성 기틀은 {e_lead}",
+        'is_different': ('관리자' in e_lead and r_s == 'N') or ('독립 프리' in e_lead and r_s == 'S')
+    })
+
+    # Scenario 10 (Finance - Integrated)
+    r_fin = "현실적 삶의 안전망을 든든하게 메우기 위해 체계적으로 저축하고 예산 통제를 하려 애씁니다." if r_s == 'S' else "무형의 학습 가치, 흥미로운 프로젝트나 독립된 자율성을 보장받는 일이라면 리스크를 안고도 베팅합니다."
+    if strong_ss in ['정재', '편재'] or strong_elem == '토':
+        e_fin = "재성(財星)의 영리한 실리 기질이 활성화되어 부동산, 계좌 정산 등 눈에 보이는 물적 자산을 빈틈없이 세금 수준으로 소유 및 제어해야만 진정한 안정감을 느낍니다."
+    elif strong_ss in ['식신', '상관']:
+        e_fin = "식상의 향유 기운에 영향을 받아 돈을 묵혀두기보다 나 자신을 뽐낼 취미, 패션, 자기계발 및 동료들과의 호탕한 대접에 소모해 정신적 유희로 전환하는 소비 성향이 높습니다."
+    else:
+        e_fin = "인성과 수(水) 기운의 비유물성으로 인해 세속적인 자산 다툼에 다소 초연하며 영적인 문화, 무형의 사색, 공부나 가치관 실현에 경제적 초점을 맞춥니다."
+
+    scenarios.append({
+        'key': 'scenario_10',
+        'title': '10. 물질적 가치와 안정을 대하는 자세',
+        'real_desc': f"자아 보고에서는 {r_fin}",
+        'est_desc': f"사주 기질상 재화 관념은 {e_fin}",
+        'is_different': ('소유 및 제어' in e_fin and r_s == 'N') or ('문화' in e_fin and r_s == 'S')
+    })
+
+    return scenarios
+
+def analyze_saju_mbti(year, month, day, hour, minute, city="Seoul", real_mbti=None, gender="male", longitude=None, utc_offset=9):
     calculator = SajuCalculator()
+    
+    try:
+        import pandas as pd
+        calculator.data = pd.read_csv(
+            calculator.csv_path,
+            dtype={'year': int, 'month': int, 'day': int},
+            parse_dates=False,
+            encoding='utf-8'
+        )
+    except Exception as e:
+        print("Warning: Failed to apply UTF-8 encoding patch to sajupy database:", e)
+
     saju = calculator.calculate_saju(
         year=year,
         month=month,
         day=day,
         hour=hour,
         minute=minute,
-        city=city
+        city=city,
+        longitude=longitude,
+        utc_offset=utc_offset,
+        use_solar_time=True
     )
+
+
     
     # Extract pillars (stems and branches)
-    # clean char function to extract only the valid Chinese Saju character
     def clean_char(raw_str, char_set):
         if not raw_str:
             return ""
@@ -141,6 +348,14 @@ def analyze_saju_mbti(year, month, day, hour, minute, city="Seoul", real_mbti=No
         '시주': {'천간': h_stem, '지지': h_branch}
     }
     
+    breakdown = {
+        'element_calculation': [],
+        'season_adjustment': '',
+        'sipsung_calculation': [],
+        'yinyang_adjustment': '',
+        'mbti_formulas': {}
+    }
+    
     # 1. 오행 점수 계산
     element_scores = {'목': 0.0, '화': 0.0, '토': 0.0, '금': 0.0, '수': 0.0}
     for pillar_name, content in pillars.items():
@@ -149,22 +364,34 @@ def analyze_saju_mbti(year, month, day, hour, minute, city="Seoul", real_mbti=No
             t_weight = TYPE_WEIGHTS[type_name]
             elem, _ = get_element_and_yin_yang(char)
             if elem:
-                element_scores[elem] += p_weight * t_weight
+                score = p_weight * t_weight
+                element_scores[elem] += score
+                breakdown['element_calculation'].append(
+                    f"{pillar_name} {type_name}: {get_kor_char(char)}({elem}) -> "
+                    f"{p_weight}(위치) x {t_weight}(형태) = +{score:.2f}점"
+                )
                 
     # 2. 계절 보정
-    # 월지 기준으로 특정 오행 강화
     season_element = None
     if m_branch in ['寅', '卯', '辰']:
         season_element = '목'
-    elif m_branch in ['巳', '午', '未']:
+    elif m_branch in ['巳', '午', '未'] or m_branch in ['사', '오', '미']:
         season_element = '화'
     elif m_branch in ['申', '酉', '戌']:
         season_element = '금'
-    elif m_branch in ['亥', '子', '丑']:
+    elif m_branch in ['亥', '子', '丑'] or m_branch in ['해', '자', '축']:
         season_element = '수'
         
     if season_element:
+        prev_score = element_scores[season_element]
         element_scores[season_element] *= 1.2
+        new_score = element_scores[season_element]
+        breakdown['season_adjustment'] = (
+            f"월지 기둥 지지 {get_kor_char(m_branch)} 기준 계절 보정: {season_element} 기운 1.2배 강화 적용 "
+            f"(기존 {prev_score:.2f}점 -> {new_score:.2f}점)"
+        )
+    else:
+        breakdown['season_adjustment'] = "월지 기준 특정 오행 계절 보정 조건 없음 (환절기/토 등)"
         
     # 3. 십성 점수 계산 (일간 기준)
     sipsung_scores = {
@@ -172,20 +399,26 @@ def analyze_saju_mbti(year, month, day, hour, minute, city="Seoul", real_mbti=No
         '정재': 0.0, '편관': 0.0, '정관': 0.0, '편인': 0.0, '정인': 0.0
     }
     
-    # Store sipsung for each position
     sipsung_map = {}
     for pillar_name, content in pillars.items():
         p_weight = POSITION_WEIGHTS[pillar_name]
         sipsung_map[pillar_name] = {}
         for type_name, char in content.items():
             t_weight = TYPE_WEIGHTS[type_name]
-            # 일간 자체는 십성 계산에서 제외
             if pillar_name == '일주' and type_name == '천간':
+                breakdown['sipsung_calculation'].append(
+                    f"일주 천간: {get_kor_char(char)} -> 자기 자신(일간), 십성 판정 기준점으로 점수 가산 제외"
+                )
                 continue
             ss = get_sipsung(d_stem, char)
             if ss:
-                sipsung_scores[ss] += p_weight * t_weight
+                score = p_weight * t_weight
+                sipsung_scores[ss] += score
                 sipsung_map[pillar_name][type_name] = ss
+                breakdown['sipsung_calculation'].append(
+                    f"{pillar_name} {type_name}: {get_kor_char(char)} -> {ss} 매핑 -> "
+                    f"{p_weight}(위치) x {t_weight}(형태) = +{score:.2f}점"
+                )
 
     # 4. 음양 보정 계산
     yin_yang_counts = {'양': 0, '음': 0}
@@ -203,9 +436,22 @@ def analyze_saju_mbti(year, month, day, hour, minute, city="Seoul", real_mbti=No
     if yang_ratio >= 0.60:
         yy_adjustment['E'] += 1
         yy_adjustment['P'] += 1
+        breakdown['yinyang_adjustment'] = (
+            f"음양 구성: 양 {yang_ratio*100:.1f}% | 음 {yin_ratio*100:.1f}% -> "
+            f"양 기운이 60% 이상이므로 외향성 E +1, 유연성 P +1 가산 보정 적용"
+        )
     elif yin_ratio >= 0.60:
         yy_adjustment['I'] += 1
         yy_adjustment['J'] += 1
+        breakdown['yinyang_adjustment'] = (
+            f"음양 구성: 양 {yang_ratio*100:.1f}% | 음 {yin_ratio*100:.1f}% -> "
+            f"음 기운이 60% 이상이므로 내향성 I +1, 구조성 J +1 가산 보정 적용"
+        )
+    else:
+        breakdown['yinyang_adjustment'] = (
+            f"음양 구성: 양 {yang_ratio*100:.1f}% | 음 {yin_ratio*100:.1f}% -> "
+            f"음양 기운이 균형을 이루므로 추가 보정 가산 없음"
+        )
 
     # 5. MBTI 네 축 점수 계산
     # E / I
@@ -218,17 +464,23 @@ def analyze_saju_mbti(year, month, day, hour, minute, city="Seoul", real_mbti=No
         sipsung_scores['편재'] * 2 +
         yy_adjustment['E']
     )
-    # E 추가 보정: 월주/시간에 표현성 강한 글자가 있을 경우 보정 (+1)
-    # 표현성 강한 글자: 상관, 식신, 편재, 겁재
     expressive_positions = [
         sipsung_map.get('월주', {}).get('천간'),
         sipsung_map.get('월주', {}).get('지지'),
         sipsung_map.get('시주', {}).get('천간'),
         sipsung_map.get('시주', {}).get('지지')
     ]
-    if any(ss in ['상관', '식신', '편재', '겁재'] for ss in expressive_positions):
+    expressive_bonus = any(ss in ['상관', '식신', '편재', '겁재'] for ss in expressive_positions)
+    if expressive_bonus:
         E_base += 1
-        
+    
+    breakdown['mbti_formulas']['E'] = (
+        f"E = 화({element_scores['화']:.2f}) x 2 + 목({element_scores['목']:.2f}) x 1 + "
+        f"겁재({sipsung_scores['겁재']:.2f}) x 2 + 식신({sipsung_scores['식신']:.2f}) x 1 + "
+        f"상관({sipsung_scores['상관']:.2f}) x 1 + 편재({sipsung_scores['편재']:.2f}) x 2 + "
+        f"음양보정({yy_adjustment['E']}) + 월주/시간표현성보정({1 if expressive_bonus else 0}) = {E_base:.2f}점"
+    )
+
     I_base = (
         element_scores['수'] * 2 +
         element_scores['금'] * 1 +
@@ -238,15 +490,21 @@ def analyze_saju_mbti(year, month, day, hour, minute, city="Seoul", real_mbti=No
         sipsung_scores['정인'] * 1 +
         yy_adjustment['I']
     )
-    # I 추가 보정: 일주/시주에 내면성 강한 글자가 있을 경우 보정 (+1)
-    # 내면성 강한 글자: 편인, 정인, 비견, 정관
     reflective_positions = [
         sipsung_map.get('일주', {}).get('지지'),
         sipsung_map.get('시주', {}).get('천간'),
         sipsung_map.get('시주', {}).get('지지')
     ]
-    if any(ss in ['편인', '정인', '비견', '정관'] for ss in reflective_positions):
+    reflective_bonus = any(ss in ['편인', '정인', '비견', '정관'] for ss in reflective_positions)
+    if reflective_bonus:
         I_base += 1
+        
+    breakdown['mbti_formulas']['I'] = (
+        f"I = 수({element_scores['수']:.2f}) x 2 + 금({element_scores['금']:.2f}) x 1 + "
+        f"비견({sipsung_scores['비견']:.2f}) x 1 + 정관({sipsung_scores['정관']:.2f}) x 1 + "
+        f"편인({sipsung_scores['편인']:.2f}) x 2 + 정인({sipsung_scores['정인']:.2f}) x 1 + "
+        f"음양보정({yy_adjustment['I']}) + 일주/시간내면성보정({1 if reflective_bonus else 0}) = {I_base:.2f}점"
+    )
 
     # S / N
     S_base = (
@@ -258,14 +516,20 @@ def analyze_saju_mbti(year, month, day, hour, minute, city="Seoul", real_mbti=No
         sipsung_scores['정관'] * 1 +
         sipsung_scores['편관'] * 1
     )
-    # S 추가 보정: 현실적 십성이 월주에 강할 경우 보정 (+1)
-    # 현실적 십성: 정재, 편재, 정관, 편관
     reality_monthly = [
         sipsung_map.get('월주', {}).get('천간'),
         sipsung_map.get('월주', {}).get('지지')
     ]
-    if any(ss in ['정재', '편재', '정관', '편관'] for ss in reality_monthly):
+    reality_bonus = any(ss in ['정재', '편재', '정관', '편관'] for ss in reality_monthly)
+    if reality_bonus:
         S_base += 1
+        
+    breakdown['mbti_formulas']['S'] = (
+        f"S = 토({element_scores['토']:.2f}) x 2 + 금({element_scores['금']:.2f}) x 1 + "
+        f"식신({sipsung_scores['식신']:.2f}) x 1 + 편재({sipsung_scores['편재']:.2f}) x 1 + "
+        f"정재({sipsung_scores['정재']:.2f}) x 2 + 정관({sipsung_scores['정관']:.2f}) x 1 + "
+        f"편관({sipsung_scores['편관']:.2f}) x 1 + 월주현실적십성보정({1 if reality_bonus else 0}) = {S_base:.2f}점"
+    )
 
     N_base = (
         element_scores['목'] * 2 +
@@ -275,15 +539,21 @@ def analyze_saju_mbti(year, month, day, hour, minute, city="Seoul", real_mbti=No
         sipsung_scores['편인'] * 2 +
         sipsung_scores['정인'] * 1
     )
-    # N 추가 보정: 미래지향적/추상적 조합이 강할 경우 보정 (+1)
-    # 조합 예: 월주/일주에 편인/상관이 있거나 수/목 점수가 높을 때
     abstract_positions = [
         sipsung_map.get('월주', {}).get('천간'),
         sipsung_map.get('월주', {}).get('지지'),
         sipsung_map.get('일주', {}).get('지지')
     ]
-    if any(ss in ['편인', '상관'] for ss in abstract_positions) or (element_scores['목'] + element_scores['수'] > 5.0):
+    abstract_bonus = any(ss in ['편인', '상관'] for ss in abstract_positions) or (element_scores['목'] + element_scores['수'] > 5.0)
+    if abstract_bonus:
         N_base += 1
+        
+    breakdown['mbti_formulas']['N'] = (
+        f"N = 목({element_scores['목']:.2f}) x 2 + 수({element_scores['수']:.2f}) x 2 + "
+        f"화({element_scores['화']:.2f}) x 1 + 상관({sipsung_scores['상관']:.2f}) x 2 + "
+        f"편인({sipsung_scores['편인']:.2f}) x 2 + 정인({sipsung_scores['정인']:.2f}) x 1 + "
+        f"미래추상성조합보정({1 if abstract_bonus else 0}) = {N_base:.2f}점"
+    )
 
     # T / F
     T_base = (
@@ -297,9 +567,17 @@ def analyze_saju_mbti(year, month, day, hour, minute, city="Seoul", real_mbti=No
         sipsung_scores['편관'] * 2 +
         sipsung_scores['정관'] * 1
     )
-    # T 추가 보정: 금/수/관성이 강할 경우 보정 (+1)
-    if (element_scores['금'] + element_scores['수'] > 5.0) or (sipsung_scores['편관'] + sipsung_scores['정관'] > 3.0):
+    logic_bonus = (element_scores['금'] + element_scores['수'] > 5.0) or (sipsung_scores['편관'] + sipsung_scores['정관'] > 3.0)
+    if logic_bonus:
         T_base += 1
+        
+    breakdown['mbti_formulas']['T'] = (
+        f"T = 금({element_scores['금']:.2f}) x 2 + 수({element_scores['수']:.2f}) x 1 + "
+        f"비견({sipsung_scores['비견']:.2f}) x 1 + 겁재({sipsung_scores['겁재']:.2f}) x 1 + "
+        f"상관({sipsung_scores['상관']:.2f}) x 1 + 편재({sipsung_scores['편재']:.2f}) x 1 + "
+        f"정재({sipsung_scores['정재']:.2f}) x 1 + 편관({sipsung_scores['편관']:.2f}) x 2 + "
+        f"정관({sipsung_scores['정관']:.2f}) x 1 + 금/수/관성보정({1 if logic_bonus else 0}) = {T_base:.2f}점"
+    )
 
     F_base = (
         element_scores['화'] * 2 +
@@ -308,9 +586,15 @@ def analyze_saju_mbti(year, month, day, hour, minute, city="Seoul", real_mbti=No
         sipsung_scores['식신'] * 2 +
         sipsung_scores['정인'] * 1
     )
-    # F 추가 보정: 목/화/식상이 강할 경우 또는 관계성 조화성 구조일 때 보정 (+1)
-    if (element_scores['목'] + element_scores['화'] > 5.0) or (sipsung_scores['식신'] + sipsung_scores['상관'] > 3.0):
+    harmony_bonus = (element_scores['목'] + element_scores['화'] > 5.0) or (sipsung_scores['식신'] + sipsung_scores['상관'] > 3.0)
+    if harmony_bonus:
         F_base += 1
+        
+    breakdown['mbti_formulas']['F'] = (
+        f"F = 화({element_scores['화']:.2f}) x 2 + 목({element_scores['목']:.2f}) x 1 + "
+        f"토({element_scores['토']:.2f}) x 1 + 식신({sipsung_scores['식신']:.2f}) x 2 + "
+        f"정인({sipsung_scores['정인']:.2f}) x 1 + 목/화/식상관계성보정({1 if harmony_bonus else 0}) = {F_base:.2f}점"
+    )
 
     # J / P
     J_base = (
@@ -322,9 +606,16 @@ def analyze_saju_mbti(year, month, day, hour, minute, city="Seoul", real_mbti=No
         sipsung_scores['정인'] * 1 +
         yy_adjustment['J']
     )
-    # J 추가 보정: 월주에 관성/재성이 강할 경우 보정 (+1)
-    if any(ss in ['정관', '편관', '정재', '편재'] for ss in reality_monthly):
+    structure_bonus = any(ss in ['정관', '편관', '정재', '편재'] for ss in reality_monthly)
+    if structure_bonus:
         J_base += 1
+        
+    breakdown['mbti_formulas']['J'] = (
+        f"J = 토({element_scores['토']:.2f}) x 2 + 금({element_scores['금']:.2f}) x 2 + "
+        f"정재({sipsung_scores['정재']:.2f}) x 2 + 정관({sipsung_scores['정관']:.2f}) x 2 + "
+        f"편관({sipsung_scores['편관']:.2f}) x 2 + 정인({sipsung_scores['정인']:.2f}) x 1 + "
+        f"음양보정({yy_adjustment['J']}) + 월주관성재성보정({1 if structure_bonus else 0}) = {J_base:.2f}점"
+    )
 
     P_base = (
         element_scores['목'] * 1 +
@@ -337,9 +628,17 @@ def analyze_saju_mbti(year, month, day, hour, minute, city="Seoul", real_mbti=No
         sipsung_scores['편인'] * 1 +
         yy_adjustment['P']
     )
-    # P 추가 보정: 식상/비겁/편인이 강할 경우 보정 (+1)
-    if (sipsung_scores['식신'] + sipsung_scores['상관'] + sipsung_scores['비견'] + sipsung_scores['겁재'] + sipsung_scores['편인'] > 5.0):
+    flexibility_bonus = (sipsung_scores['식신'] + sipsung_scores['상관'] + sipsung_scores['비견'] + sipsung_scores['겁재'] + sipsung_scores['편인'] > 5.0)
+    if flexibility_bonus:
         P_base += 1
+        
+    breakdown['mbti_formulas']['P'] = (
+        f"P = 목({element_scores['목']:.2f}) x 1 + 화({element_scores['화']:.2f}) x 1 + "
+        f"수({element_scores['수']:.2f}) x 1 + 겁재({sipsung_scores['겁재']:.2f}) x 2 + "
+        f"식신({sipsung_scores['식신']:.2f}) x 1 + 상관({sipsung_scores['상관']:.2f}) x 2 + "
+        f"편재({sipsung_scores['편재']:.2f}) x 1 + 편인({sipsung_scores['편인']:.2f}) x 1 + "
+        f"음양보정({yy_adjustment['P']}) + 식상비겁편인보정({1 if flexibility_bonus else 0}) = {P_base:.2f}점"
+    )
 
     # Round scores
     scores = {
@@ -385,7 +684,6 @@ def analyze_saju_mbti(year, month, day, hour, minute, city="Seoul", real_mbti=No
 
     # Alternate possibilities for "거의 동률" or "약한 선호" axes
     alternatives = []
-    # Identify flexible axes (diff <= 10%)
     flexible_axes = []
     for axis, (dec, strength, ratio) in axis_results.items():
         if strength in ["거의 동률", "약한 선호"]:
@@ -397,8 +695,6 @@ def analyze_saju_mbti(year, month, day, hour, minute, city="Seoul", real_mbti=No
         return "".join(lst)
 
     mbti_options = [primary_mbti]
-    
-    # 2nd and 3rd choices construction
     axis_indices = {'E/I': 0, 'S/N': 1, 'T/F': 2, 'J/P': 3}
     
     # Sort flexible axes by smallest ratio
@@ -419,7 +715,6 @@ def analyze_saju_mbti(year, month, day, hour, minute, city="Seoul", real_mbti=No
     ]
     
     while len(mbti_options) < 3:
-        # Generate another variation from the next closest axis
         all_axes_sorted = sorted(axis_indices.keys(), key=lambda x: axis_results[x][2])
         added = False
         for axis in all_axes_sorted:
@@ -432,7 +727,6 @@ def analyze_saju_mbti(year, month, day, hour, minute, city="Seoul", real_mbti=No
                 added = True
                 break
         if not added:
-            # Absolute fallback
             for m in all_16_mbtis:
                 if m not in mbti_options:
                     mbti_options.append(m)
@@ -456,8 +750,12 @@ def analyze_saju_mbti(year, month, day, hour, minute, city="Seoul", real_mbti=No
         'weak_elements': weak_elements,
         'strong_sipsungs': strong_sipsungs,
         'real_mbti': real_mbti,
-        'yy_adjustment': yy_adjustment
+        'yy_adjustment': yy_adjustment,
+        'breakdown': breakdown,
+        'gender': gender,
+        'solar_correction': saju.get('solar_correction')
     }
+
 
 def print_results(res):
     print("## 1. 사주 핵심 요약\n")
@@ -465,12 +763,9 @@ def print_results(res):
     print(f"* 약한 오행: {', '.join(res['weak_elements'])}")
     print(f"* 강한 십성: {', '.join(res['strong_sipsungs'])}")
     
-    # Pillar Korean Conversion for Display
     display_pillars = {}
     for name, content in res['pillars'].items():
-        stem_kor = get_kor_char(content['천간'])
-        branch_kor = get_kor_char(content['지지'])
-        display_pillars[name] = f"{stem_kor}{branch_kor}"
+        display_pillars[name] = f"{get_kor_char(content['천간'])}{get_kor_char(content['지지'])}"
         
     print(f"* 사주팔자 기둥: 연주({display_pillars['연주']}), 월주({display_pillars['월주']}), 일주({display_pillars['일주']}), 시주({display_pillars['시주']})")
     
@@ -559,7 +854,6 @@ if __name__ == "__main__":
     
     args = parser.parse_args()
     
-    # Interactive input if arguments are missing
     if not (args.year and args.month and args.day and args.hour is not None):
         print("사주-MBTI 변환 엔진 대화형 분석기")
         try:
