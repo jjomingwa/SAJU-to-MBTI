@@ -47,6 +47,23 @@
             
             --pillar-chars-gradient: linear-gradient(135deg, #7c3aed, #2563eb);
             --modal-backdrop-bg: rgba(15, 23, 42, 0.4);
+
+            /* Badge Colors (Light Mode) */
+            --badge-purple-bg: rgba(124, 58, 237, 0.08);
+            --badge-purple-text: #6d28d9;
+            --badge-purple-border: rgba(124, 58, 237, 0.2);
+            --badge-blue-bg: rgba(37, 99, 235, 0.08);
+            --badge-blue-text: #1d4ed8;
+            --badge-blue-border: rgba(37, 99, 235, 0.2);
+            --badge-green-bg: rgba(5, 150, 105, 0.08);
+            --badge-green-text: #047857;
+            --badge-green-border: rgba(5, 150, 105, 0.2);
+            --badge-red-bg: rgba(225, 29, 72, 0.08);
+            --badge-red-text: #be123c;
+            --badge-red-border: rgba(225, 29, 72, 0.2);
+            --badge-orange-bg: rgba(217, 119, 6, 0.08);
+            --badge-orange-text: #b45309;
+            --badge-orange-border: rgba(217, 119, 6, 0.2);
             
             /* Elements colors */
             --color-wood: #059669;
@@ -93,6 +110,23 @@
             
             --pillar-chars-gradient: linear-gradient(135deg, #e9d5ff, #bfdbfe);
             --modal-backdrop-bg: rgba(11, 15, 25, 0.85);
+
+            /* Badge Colors (Dark Mode) */
+            --badge-purple-bg: rgba(168, 85, 247, 0.15);
+            --badge-purple-text: #d8b4fe;
+            --badge-purple-border: rgba(168, 85, 247, 0.3);
+            --badge-blue-bg: rgba(59, 82, 246, 0.15);
+            --badge-blue-text: #93c5fd;
+            --badge-blue-border: rgba(59, 82, 246, 0.3);
+            --badge-green-bg: rgba(16, 185, 129, 0.15);
+            --badge-green-text: #a7f3d0;
+            --badge-green-border: rgba(16, 185, 129, 0.3);
+            --badge-red-bg: rgba(244, 63, 94, 0.15);
+            --badge-red-text: #fecdd3;
+            --badge-red-border: rgba(244, 63, 94, 0.3);
+            --badge-orange-bg: rgba(245, 158, 11, 0.15);
+            --badge-orange-text: #fde68a;
+            --badge-orange-border: rgba(245, 158, 11, 0.3);
             
             /* Elements colors */
             --color-wood: #10b981;
@@ -580,14 +614,45 @@
 
         /* Badge/Chips */
         .badge {
-            background: rgba(168, 85, 247, 0.15);
-            color: #d8b4fe;
-            border: 1px solid rgba(168, 85, 247, 0.3);
+            background: var(--badge-purple-bg);
+            color: var(--badge-purple-text);
+            border: 1px solid var(--badge-purple-border);
             border-radius: 20px;
             padding: 0.35rem 0.95rem;
             font-size: 0.9rem;
             font-weight: 600;
             display: inline-block;
+            transition: background 0.3s, color 0.3s, border-color 0.3s;
+        }
+
+        .badge-purple {
+            background: var(--badge-purple-bg);
+            color: var(--badge-purple-text);
+            border: 1px solid var(--badge-purple-border);
+        }
+
+        .badge-blue {
+            background: var(--badge-blue-bg);
+            color: var(--badge-blue-text);
+            border: 1px solid var(--badge-blue-border);
+        }
+
+        .badge-green {
+            background: var(--badge-green-bg);
+            color: var(--badge-green-text);
+            border: 1px solid var(--badge-green-border);
+        }
+
+        .badge-red {
+            background: var(--badge-red-bg);
+            color: var(--badge-red-text);
+            border: 1px solid var(--badge-red-border);
+        }
+
+        .badge-orange {
+            background: var(--badge-orange-bg);
+            color: var(--badge-orange-text);
+            border: 1px solid var(--badge-orange-border);
         }
 
         .comparison-grid {
@@ -1076,8 +1141,8 @@
                             </div>
                         </div>
                         <div style="text-align: center; margin-top: 0.8rem; display: flex; flex-direction: column; gap: 0.5rem; align-items: center;">
-                            <span class="badge" id="yin-yang-ratio-badge">양 기운 -% | 음 기운 -%</span>
-                            <span class="badge" id="calendar-conversion-info" style="background: rgba(59, 82, 246, 0.1); color: #60a5fa; border-color: rgba(59, 82, 246, 0.2);">-</span>
+                            <span class="badge badge-purple" id="yin-yang-ratio-badge">양 기운 -% | 음 기운 -%</span>
+                            <span class="badge badge-blue" id="calendar-conversion-info">-</span>
                         </div>
                     </div>
 
@@ -1148,12 +1213,12 @@
                     <!-- Detailed Explanation Panel (Initially Hidden) -->
                     <div id="explanation-panel" class="hidden" style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--card-border);">
                         <h4 style="font-size: 1.15rem; color: var(--primary); margin-bottom: 0.75rem;">용신(用神) 및 희신(喜神) 분석</h4>
-                        <div class="scenario-subcard" style="margin-bottom: 1.5rem; background: rgba(15, 23, 42, 0.6);">
-                            <p style="font-size: 0.95rem; line-height: 1.6; color: #cbd5e1; margin-bottom: 0.5rem;" id="yongsin-explanation-text">-</p>
+                        <div class="scenario-subcard" style="margin-bottom: 1.5rem;">
+                            <p style="font-size: 0.95rem; line-height: 1.6; color: var(--text-paragraph); margin-bottom: 0.5rem;" id="yongsin-explanation-text">-</p>
                             <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-                                <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #a7f3d0; border-color: rgba(16, 185, 129, 0.3);">용신(용하는 기운): <strong id="val-yongsin">-</strong></span>
-                                <span class="badge" style="background: rgba(59, 82, 246, 0.15); color: #93c5fd; border-color: rgba(59, 82, 246, 0.3);">희신(돕는 기운): <strong id="val-huisin">-</strong></span>
-                                <span class="badge" style="background: rgba(244, 63, 94, 0.15); color: #fecdd3; border-color: rgba(244, 63, 94, 0.3);">기신(꺼리는 기운): <strong id="val-gisin">-</strong></span>
+                                <span class="badge badge-green">용신(용하는 기운): <strong id="val-yongsin">-</strong></span>
+                                <span class="badge badge-blue">희신(돕는 기운): <strong id="val-huisin">-</strong></span>
+                                <span class="badge badge-red">기신(꺼리는 기운): <strong id="val-gisin">-</strong></span>
                             </div>
                         </div>
                         
@@ -1225,7 +1290,7 @@
                 <!-- Step 0. Date Conversion -->
                 <div class="step-section">
                     <div class="step-title">
-                        <span class="badge" style="background: rgba(96, 165, 250, 0.15); color: #93c5fd; border-color: rgba(96, 165, 250, 0.3);">Step 0</span>
+                        <span class="badge badge-blue">Step 0</span>
                         <span>음/양력 생일 및 달력 변환 정보</span>
                     </div>
                     <div class="step-body">
@@ -1238,7 +1303,7 @@
                 <!-- Step 1. Elements -->
                 <div class="step-section">
                     <div class="step-title">
-                        <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #a7f3d0; border-color: rgba(16, 185, 129, 0.3);">Step 1</span>
+                        <span class="badge badge-green">Step 1</span>
                         <span>오행 점수 연산 내역 (글자당 가중치)</span>
                     </div>
                     <div class="step-body">
@@ -1251,7 +1316,7 @@
                 <!-- Step 2. Season Adjustment -->
                 <div class="step-section">
                     <div class="step-title">
-                        <span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #fde68a; border-color: rgba(245, 158, 11, 0.3);">Step 2</span>
+                        <span class="badge badge-orange">Step 2</span>
                         <span>월지 기준 계절 보정</span>
                     </div>
                     <div class="step-body">
@@ -1264,7 +1329,7 @@
                 <!-- Step 3. Sipsung -->
                 <div class="step-section">
                     <div class="step-title">
-                        <span class="badge" style="background: rgba(59, 82, 246, 0.15); color: #bfdbfe; border-color: rgba(59, 82, 246, 0.3);">Step 3</span>
+                        <span class="badge badge-blue">Step 3</span>
                         <span>일간 기준 십성 매핑 및 연산</span>
                     </div>
                     <div class="step-body">
@@ -1277,7 +1342,7 @@
                 <!-- Step 4. Yin Yang -->
                 <div class="step-section">
                     <div class="step-title">
-                        <span class="badge" style="background: rgba(244, 63, 94, 0.15); color: #fecdd3; border-color: rgba(244, 63, 94, 0.3);">Step 4</span>
+                        <span class="badge badge-red">Step 4</span>
                         <span>전체 음양 비율 보정</span>
                     </div>
                     <div class="step-body">
@@ -1290,7 +1355,7 @@
                 <!-- Step 5. Formulas -->
                 <div class="step-section">
                     <div class="step-title">
-                        <span class="badge" style="background: rgba(168, 85, 247, 0.15); color: #f3e8ff; border-color: rgba(168, 85, 247, 0.3);">Step 5</span>
+                        <span class="badge badge-purple">Step 5</span>
                         <span>MBTI 4개 축별 수식 대입 결과</span>
                     </div>
                     <div class="step-body" id="calc-formulas-box">
@@ -1521,9 +1586,9 @@
                 itemDiv.innerHTML = `
                     <div class="scenario-title" style="margin-bottom: 0.5rem; font-size: 1.05rem;">
                         <span>${item.pillar} <span style="font-size:0.85rem; color:var(--text-muted); font-weight:normal;">[평균 운: ${item.score}점]</span></span>
-                        <span class="badge" style="background: rgba(168, 85, 247, 0.15); color: #d8b4fe; border-color: rgba(168, 85, 247, 0.3);">${item.age_range}</span>
+                        <span class="badge badge-purple">${item.age_range}</span>
                     </div>
-                    <p style="font-size: 0.9rem; line-height: 1.6; color: #cbd5e1;">${item.desc}</p>
+                    <p style="font-size: 0.9rem; line-height: 1.6; color: var(--text-paragraph);">${item.desc}</p>
                 `;
                 decadesContainer.appendChild(itemDiv);
             });
@@ -1700,7 +1765,7 @@
                 row.innerHTML = `
                     <div class="axis-header">
                         <span>선호 강도: <span style="color: var(--primary);">${strength}</span></span>
-                        <span class="badge" style="background: rgba(59, 82, 246, 0.15); color: #93c5fd; border-color: rgba(59, 82, 246, 0.3);">${dec} 판정</span>
+                        <span class="badge badge-blue">${dec} 판정</span>
                     </div>
                     <div class="axis-bar-container">
                         <div class="axis-left-fill" style="width: ${leftPct}%"></div>
@@ -1787,8 +1852,8 @@
                     itemDiv.className = 'scenario-item';
                     
                     const badgeHtml = item.is_different 
-                        ? `<span class="badge" style="background: rgba(244, 63, 94, 0.15); color: #fecdd3; border-color: rgba(244, 63, 94, 0.3);">성향 차이</span>`
-                        : `<span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #a7f3d0; border-color: rgba(16, 185, 129, 0.3);">성향 일치</span>`;
+                        ? `<span class="badge badge-red">성향 차이</span>`
+                        : `<span class="badge badge-green">성향 일치</span>`;
                         
                     itemDiv.innerHTML = `
                         <div class="scenario-title">
