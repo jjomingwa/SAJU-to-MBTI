@@ -757,7 +757,24 @@
             box-shadow: 0 4px 15px rgba(168, 85, 247, 0.25);
             transform: translateX(-3px);
         }
+
+        /* Custom scrollbar for the chart container */
+        .chart-container-scroll::-webkit-scrollbar {
+            height: 6px;
+        }
+        .chart-container-scroll::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.5);
+            border-radius: 3px;
+        }
+        .chart-container-scroll::-webkit-scrollbar-thumb {
+            background: rgba(168, 85, 247, 0.3);
+            border-radius: 3px;
+        }
+        .chart-container-scroll::-webkit-scrollbar-thumb:hover {
+            background: rgba(168, 85, 247, 0.5);
+        }
     </style>
+
 </head>
 <body>
 
@@ -1008,9 +1025,12 @@
                     <h3>인생 운 흐름 & 성향 변화 그래프</h3>
                     <p class="subtitle" style="margin-bottom: 1.5rem;">사주 대운(10년 주기)과 세운(연간 주기)의 오행 배치를 분석하여 산출한 인생 운 흐름도와 시기별 MBTI 성향 변화 추이를 보여줍니다.</p>
                     
-                    <div style="position: relative; height: 350px; width: 100%; margin-bottom: 1.5rem;">
-                        <canvas id="fortuneChart"></canvas>
+                    <div class="chart-container-scroll" style="width: 100%; overflow-x: auto; margin-bottom: 1.5rem; -webkit-overflow-scrolling: touch;">
+                        <div style="position: relative; height: 350px; min-width: 1200px; width: 100%;">
+                            <canvas id="fortuneChart"></canvas>
+                        </div>
                     </div>
+
                     
                     <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 1rem;">
                         <button type="button" id="explanation-toggle-btn" class="btn-secondary" style="margin-top: 0; width: auto; padding: 0.8rem 1.5rem;">
@@ -1469,8 +1489,18 @@
                             },
                             ticks: {
                                 color: '#94a3b8',
-                                maxTicksLimit: 15
+                                callback: function(val, index) {
+                                    const age = index + 1;
+                                    if (age === 1 || age % 5 === 0) {
+                                        return `${age}세`;
+                                    }
+                                    return '';
+                                },
+                                autoSkip: false,
+                                maxRotation: 0,
+                                minRotation: 0
                             }
+
                         },
                         y: {
                             min: 10,
